@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Kontest
+Comment=Ham Radio Contest logging software
+Comment[es]=Programa de concursos de radioaficionado
+Exec=kontest
+Icon=kontest-icon.png
+Terminal=false
+Type=Application
+Categories=Utility;Database;HamRadio;KDE
