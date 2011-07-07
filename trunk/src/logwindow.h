@@ -1,46 +1,47 @@
+#ifndef LOGWINDOW_H
+#define LOGWINDOW_H
+#include <QtGui>
+#include <QWidget>
+#include <QSqlRelationalTableModel>
+#include <QTableView>
+#include <QAction>
 
- #ifndef LOGWINDOW_H
- #define LOGWINDOW_H
+class QStringList;
+class QLabel;
+class QVBoxLayout;
 
- #include <QMainWindow>
+enum {
+    Log_Id = 0,
+    Log_Name = 1,
+    Log_BandId = 2,
+    Log_ModeId = 3,
+    Log_DateId = 4,
+    Log_TimeId = 5
+};
 
- class QAction;
- class QMenu;
- 
- class QTableView;
+class LogWindow : public  QWidget
+{
+    Q_OBJECT
 
-class LogWindow : public QMainWindow{
-     Q_OBJECT
-
-  public:
+public:
     LogWindow();
     ~LogWindow();
 
-  protected:
-    void closeEvent(QCloseEvent *event);
-  
-  private slots:
-//     void newFile();
-//     void open();
-//     void save();
-//     void saveAs();
-     void fileClose();
-//     void about();
-//     void showLogWindow();
-//     void showPartialsWindow();
 
-  private:
-    void createActions();
-    void createMenus();
-    
-    QMenu *fileMenu;
-    QAction *closeAct;
-    
-    //ImageModel *model;
-    QTableView *view;
-    
+private:
+    QSqlRelationalTableModel *logModel;
+    QWidget *logPanel;
+    QTableView *logView;
+    QLabel *logLabel;
 
-    
+    QAction *logWinAct;
+    QAction *loggWinAct;
+
+
+    void createlogPanel();
+
 };
 
-#endif
+
+
+#endif // LOGWINDOW_H
