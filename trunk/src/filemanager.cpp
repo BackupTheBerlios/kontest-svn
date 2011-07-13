@@ -110,4 +110,7 @@ void FileManager::processLine(const QString _line)
 
 }
 
-
+bool FileManager::adifLogExport()
+{
+    qDebug() << "FileManager::adifLogExport" << endl;
+}

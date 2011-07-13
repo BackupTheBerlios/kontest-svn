@@ -6,6 +6,7 @@
 #include <QStringList>
 #include <QSqlRelationalTableModel>
 #include <QSqlQuery>
+#include <QProgressBar>
 #include <QProgressDialog>
 
 
@@ -24,18 +25,24 @@ public:
     World(const QString _kontestDir);
     ~World();
     bool create(const QString _kontestDir);
+    int getEntityId(const QString _qrz);
+    QString getEntityName(const QString _qrz);
 
 private:
     bool readCTYDAT();
     void processLine(const QString _line);
     void createWorldModel();
     QStringList readZones(const QString &pref, const int _cq, const int _itu);
+
+
+
     int progressBarPosition;
 
     bool created;
     QString kontestDir;
     int cqz, ituz, numberOfEntities;
     QString entityName;
+    QString currentPrefix; // Used in the progressBar
     QString queryString;
 
     bool ret;
@@ -48,6 +55,7 @@ private:
     int nullValue;
 
     QSqlRelationalTableModel *worldModel;
+    QProgressBar *progressBar;
 
 
 };

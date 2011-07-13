@@ -17,7 +17,7 @@ public:
     ~FileManager();
    // bool createWorld(const QString _kontestDir);
     bool adifReadLog(const QString& tfileName);
-
+    bool adifLogExport();
 private:
 
     void processLine(const QString _line);

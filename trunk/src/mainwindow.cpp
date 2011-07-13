@@ -8,18 +8,23 @@
 MainWindow::MainWindow()
 {
     // <ui>
-    bool existingData = QFile::exists("logbook.dat");
+
 
     logModel = new QSqlRelationalTableModel(this);
     logView = new QTableView;
 
+
     #ifdef Q_WS_WIN
         qDebug() << "WINDOWS DETECTED!"  << endl;
-        kontestDir = QDir::homePath()+"/kontest";  // We create the \klog for the logs and data
+        kontestDir = QDir::homePath()+"/kontest/";  // We create the \klog for the logs and data
     #else
         qDebug() << "NO WINDOWS"  << endl;
         kontestDir = QDir::homePath()+"/.kontest";  // We create the ~/.klog for the logs and data
     #endif
+
+        qDebug() << "MainWindow::MainWindow: logbook: " << QString(kontestDir + "logbook.dat") << endl;
+    bool existingData = QFile::exists(kontestDir + "logbook.dat");
+
     statusBarMessage = tr("Starting Kontest");
     if (!QDir::setCurrent ( kontestDir )){
         QDir d1(kontestDir);
@@ -59,18 +64,35 @@ MainWindow::MainWindow()
     createMenus();
     // </UI>
 
+    if (!createConnection())
+        return ;
+    if (!existingData)
+    {
+        qDebug() << "MainWindow::MainWindow: !existingData" << endl;
+        createData();
+    }else
+    {
+        qDebug() << "MainWindow::MainWindow: existingData" << endl;
+    }
 
-    createlogPanel();
+//**************************************************
+    logPanel = new QWidget;
+
+    loggWinAct = new QAction(tr("&Log Windows"), this);
+    loggWinAct->setShortcut(Qt::CTRL + Qt::Key_L);
+    connect(loggWinAct, SIGNAL(triggered()), this, SLOT(slotLogWinShow()));
+    logPanel->addAction(loggWinAct);
+
+
+
     createlogModel();
+    createlogPanel();
+
 
     setWindowTitle(tr("Kontest"));
     logView->setCurrentIndex(logModel->index(0, 0));
 
-    if (!createConnection())
-        return ;
-    if (!existingData)
-        createData();
-
+    world->create(kontestDir);
 
 }
 
@@ -79,6 +101,44 @@ void MainWindow::slotQRZReturnPressed()
     qDebug() << "MainWindow::slotQRZReturnPressed: " << qrzLineEdit->text() << " - " << QString::number(bandComboBox->currentIndex()) << "/" << QString::number(modeComboBox->currentIndex()) << endl;
     //int newId = -1;
     bool ret = false;
+    QString tqrz = qrzLineEdit->text();
+
+
+
+
+    if (true) // Condition where to create the QUERY string and execute it
+    {
+        //http://www.sqlite.org/autoinc.html
+        // NULL = is the keyword for the autoincrement to generate next value
+
+        QSqlQuery query;
+        QString queryString = readDataFromUI();
+        if (queryString != "NULL"){
+            ret = query.exec(queryString);
+            qDebug() << "MainWindow::slotQRZReturnPressed: queryString: " << queryString << endl;
+            // Get database given autoincrement value
+
+            if (ret)
+            {
+                qDebug() << "MainWindow::slotQRZReturnPressed: ret = true "  << endl;
+                logModel->select();
+            }else
+            {
+                qDebug() << "MainWindow::slotQRZReturnPressed: ret = false "  << endl;
+            }
+        }else   // The QUERY string is NULL
+        {
+            qDebug() << "MainWindow::slotQRZReturnPressed: queryString: " << queryString << endl;
+        }
+    }
+
+slotClearButtonClicked();
+}
+
+QString MainWindow::readDataFromUI()
+{
+    qDebug() << "MainWindow::readDataFromUI: " << endl;
+
     QString tqrz = qrzLineEdit->text();
     QString tsrx = SRXLineEdit->text();
     QString tstx = STXLineEdit->text();
@@ -89,57 +149,24 @@ void MainWindow::slotQRZReturnPressed()
     QString tdate = (dateEdit->date()).toString("yyyy-MM-dd");
     QString ttime = (timeEdit->time()).toString("hh:mm:ss");
 
+    QString stringQuery = QString("insert into log (qrz, bandid, modeid, date, time, srx, stx) values('%1','%2','%3','%4','%5','%8','%7')").arg(tqrz).arg(tband).arg(tmode).arg(tdate).arg(ttime).arg(tsrx).arg(tstx);
 
+    return stringQuery;
 
-    if (true)
-    {
-        //http://www.sqlite.org/autoinc.html
-        // NULL = is the keyword for the autoincrement to generate next value
-
-        QSqlQuery query;
-        ret = query.exec(QString("insert into log values(NULL,'%1','%2','%3','%4','%5','%8','%7')")
-           .arg(tqrz).arg(tband).arg(tmode).arg(tdate).arg(ttime).arg(tsrx).arg(tstx));
-
-        // Get database given autoincrement value
-
-        if (ret)
-        {
-            logModel->select();
-
-        }else
-        {
-
-        }
-
-    }
-
-slotClearButtonClicked();
+  //  return "NULL";
 }
-
 void MainWindow::createlogPanel()
 {
 
-    logView->setContextMenuPolicy(Qt::CustomContextMenu);
-    logPanel = new QWidget;
 
-    loggWinAct = new QAction(tr("&Log Windows"), this);
-    loggWinAct->setShortcut(Qt::CTRL + Qt::Key_L);
-    connect(loggWinAct, SIGNAL(triggered()), this, SLOT(slotLogWinShow()));
-    logPanel->addAction(loggWinAct);
-
-
-
+   //logView = new QTableView;
     logView->setModel(logModel);
-
     logView->setItemDelegate(new QSqlRelationalDelegate(this));
-    logView->setSelectionMode(QAbstractItemView::SingleSelection);
+    logView->setSelectionMode( QAbstractItemView::SingleSelection);
     logView->setSelectionBehavior(QAbstractItemView::SelectRows);
-    logView->setColumnHidden(Log_Id, false);
-    //logView->setColumnHidden(0, false);
+    logView->setColumnHidden(Log_Id, true);
     logView->resizeColumnsToContents();
-    logView->setSortingEnabled(true);
-    logView->sortByColumn(0,Qt::DescendingOrder);
-    //logView->horizontalHeader()->setStretchLastSection(true);
+    logView->horizontalHeader()->setStretchLastSection(true);
 
     logLabel = new QLabel(tr("Log"));
     logLabel->setBuddy(logView);
@@ -148,25 +175,42 @@ void MainWindow::createlogPanel()
     layout->addWidget(logView);
     logPanel->setLayout(layout);
 
-   // logPanel->show();
 
 }
 
 void MainWindow::createlogModel()
 {
+/*
+    Log_Id = 0,
+    Log_Name = 1,
+    Log_BandId = 2,
+    Log_ModeId = 3,
+    Log_DateId = 4,
+    Log_TimeId = 5
 
+setRelation ( int column, const QSqlRelation & relation )
+
+    model->setTable("employee");
+    model->setRelation(2, QSqlRelation("city", "id", "name"));
+
+The setRelation() call specifies that column 2 in table employee
+is a foreign key that maps with field id of table city, and that
+the view should present the city's name field to the user.
+
+*/
+
+    logModel = new QSqlRelationalTableModel(this);
     logModel->setTable("log");
-    logModel->setRelation(Log_BandId,
-            QSqlRelation("band", "id", "name"));
-    logModel->setRelation(Log_ModeId,
-            QSqlRelation("mode", "id", "name"));
+    logModel->setRelation(Log_BandId, QSqlRelation("band", "id", "name"));
+    logModel->setRelation(Log_ModeId, QSqlRelation("mode", "id", "name"));
     logModel->setSort(Log_Name, Qt::AscendingOrder);
-    logModel->setHeaderData(Log_Name, Qt::Horizontal, tr("QRZ"));
+    logModel->setHeaderData(Log_Name, Qt::Horizontal,tr("QRZ"));
     logModel->setHeaderData(Log_BandId, Qt::Horizontal, tr("Band"));
     logModel->setHeaderData(Log_ModeId, Qt::Horizontal, tr("Mode"));
     logModel->setHeaderData(Log_DateId, Qt::Horizontal, tr("Date"));
     logModel->setHeaderData(Log_TimeId, Qt::Horizontal, tr("Time"));
     logModel->select();
+
 }
 
 void MainWindow::createUI()
@@ -321,19 +365,26 @@ connect(logView, SIGNAL(customContextMenuRequested( const QPoint& ) ), this, SLO
 void MainWindow::slotQRZTextChanged()
 {
     qDebug() << "MainWindow::slotQRZTextChanged: " << qrzLineEdit->text() << " / Length: " << QString::number((qrzLineEdit->text()).size()) << endl;
-
+    int i;
+    qrzLineEdit->setText(((qrzLineEdit->text())).simplified());
+    qrzLineEdit->setText((qrzLineEdit->text()).toUpper());
     currentQrz = qrzLineEdit->text();
-    //int i = currentQrz.size();
 
+    if ((currentQrz).count('\\')){ // Replaces \ by / to ease operation.
+        currentQrz.replace(QChar('\\'), QChar('/'));
+        qrzLineEdit->setText(currentQrz);
+    }
 
     if ( currentQrz.endsWith(' ') )
     {/*Remove the space and moves the focus to SRX to write the RX exchange*/
         previousQrz = currentQrz.simplified();
         qrzLineEdit->setText(previousQrz);
         SRXLineEdit->setFocus();
-
     }
 
+    i = world->getEntityId(currentQrz);
+    //qDebug() << "MainWindow::slotQRZTextChanged: " << qrzLineEdit->text() << " / EntityID: " << QString::number(i) << endl;
+    updateStatusBar(world->getEntityName(currentQrz));
 
 }
 
@@ -402,6 +453,9 @@ void MainWindow::slotClearButtonClicked()
     SRXLineEdit->clear();
     STXLineEdit->clear();
     qrzLineEdit->setFocus();
+
+    SRXLineEdit->setText("59");
+    STXLineEdit->setText("59");
 
     //dateEdit->setDate(dateTime->date());
     //timeEdit->setTime(dateTime->time());
@@ -642,20 +696,24 @@ void MainWindow::keyPressEvent(QKeyEvent *event){
 bool MainWindow::createConnection()
 {
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName(":memory:"); // 2m 07s
-    //db.setDatabaseName("logbook.dat");
+    //db.setDatabaseName(":memory:"); // 2m 07s
+    db.setDatabaseName("logbook.dat");
     //rc = sqlite3_open(":memory:", &db);
     if (!db.open()) {
         QMessageBox::warning(0, QObject::tr("Database Error"),
                              db.lastError().text());
+        qDebug() << "MainWindow::createConnection: DB creation ERROR"  << endl;
         return false;
     }
+    qDebug() << "MainWindow::createConnection: DB creation OK"  << endl;
     return true;
 }
 
 void MainWindow::createData()
-{   //http://www.sqlite.org/
+{
+    //http://www.sqlite.org/
     //http://www.sqlite.org/datatype3.html
+    qDebug() << "MainWindow::createData"  << endl;
 
     QSqlQuery query;
     query.exec("DROP TABLE log");
@@ -676,7 +734,7 @@ void MainWindow::createData()
 
       query.exec("CREATE TABLE log ("
                  "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                 "name VARCHAR(40) NOT NULL, "
+                 "qrz VARCHAR(40) NOT NULL, "
                  "bandid INTEGER NOT NULL, "
                  "modeid INTEGER NOT NULL, "
                  "date VARCHAR(10) NOT NULL, "
@@ -708,6 +766,7 @@ void MainWindow::createData()
                  "arrlid INTEGER NOT NULL, "
                  "mainprefix VARCHAR(15) NOT NULL, "
                  "FOREIGN KEY (continent) REFERENCES continent)");
+//TODO: To add some columns in this the table to mark if worked/confirmed/band/Mode
 
       query.exec("CREATE TABLE prefixesofentity ("
                  "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -734,6 +793,4 @@ void MainWindow::createData()
       query.exec("INSERT INTO mode (name) VALUES ('SSB')");
       query.exec("INSERT INTO mode (name) VALUES ('CW')");
       query.exec("INSERT INTO mode (name) VALUES ('RTTY')");
-
-      world->create(kontestDir);
 }

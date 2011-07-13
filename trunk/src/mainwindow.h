@@ -34,7 +34,8 @@ class QSplitter;
 
 class QLabel;
 
-enum {
+enum
+{
     Log_Id = 0,
     Log_Name = 1,
     Log_BandId = 2,
@@ -87,6 +88,7 @@ private:
     bool readCtyFile();
     void showMenuRightButtoncreateActions();
     void righButtonLogMenu(const int trow);
+    QString readDataFromUI(); // Reads the QSO data from the UI and returns the SQL Query
 
     bool createConnection();
     void createData();
