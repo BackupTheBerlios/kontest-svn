@@ -92,7 +92,7 @@ MainWindow::MainWindow()
     setWindowTitle(tr("Kontest"));
     logView->setCurrentIndex(logModel->index(0, 0));
 
-    world->create(kontestDir);
+
 
 }
 
@@ -103,9 +103,6 @@ void MainWindow::slotQRZReturnPressed()
     bool ret = false;
     QString tqrz = qrzLineEdit->text();
 
-
-
-
     if (true) // Condition where to create the QUERY string and execute it
     {
         //http://www.sqlite.org/autoinc.html
@@ -115,20 +112,20 @@ void MainWindow::slotQRZReturnPressed()
         QString queryString = readDataFromUI();
         if (queryString != "NULL"){
             ret = query.exec(queryString);
-            qDebug() << "MainWindow::slotQRZReturnPressed: queryString: " << queryString << endl;
+            //qDebug() << "MainWindow::slotQRZReturnPressed: queryString: " << queryString << endl;
             // Get database given autoincrement value
 
             if (ret)
             {
-                qDebug() << "MainWindow::slotQRZReturnPressed: ret = true "  << endl;
+                //qDebug() << "MainWindow::slotQRZReturnPressed: ret = true "  << endl;
                 logModel->select();
             }else
             {
-                qDebug() << "MainWindow::slotQRZReturnPressed: ret = false "  << endl;
+                //qDebug() << "MainWindow::slotQRZReturnPressed: ret = false "  << endl;
             }
         }else   // The QUERY string is NULL
         {
-            qDebug() << "MainWindow::slotQRZReturnPressed: queryString: " << queryString << endl;
+            //qDebug() << "MainWindow::slotQRZReturnPressed: queryString: " << queryString << endl;
         }
     }
 
@@ -269,7 +266,8 @@ void MainWindow::createUI()
     RSTtxgroupBox->setLayout(RSTtxvbox);
 
 
-    QGroupBox *qrzgroupBox = new QGroupBox(tr("QRZ"));
+    //QGroupBox *qrzgroupBox = new QGroupBox(tr("QRZ"));
+    qrzgroupBox = new QGroupBox(tr("QRZ"));
     qrzgroupBox->setFlat(true);
     QVBoxLayout *qrzvbox = new QVBoxLayout;
     qrzvbox->addWidget(qrzLineEdit);
@@ -370,6 +368,16 @@ void MainWindow::slotQRZTextChanged()
     qrzLineEdit->setText((qrzLineEdit->text()).toUpper());
     currentQrz = qrzLineEdit->text();
 
+    if (checkIfWorkedB4(currentQrz)<0)
+    {
+        qrzgroupBox->setTitle(tr("QRZ"));
+
+    }
+    else
+    {
+        qrzgroupBox->setTitle(tr("DUPE"));
+    }
+
     if ((currentQrz).count('\\')){ // Replaces \ by / to ease operation.
         currentQrz.replace(QChar('\\'), QChar('/'));
         qrzLineEdit->setText(currentQrz);
@@ -382,9 +390,15 @@ void MainWindow::slotQRZTextChanged()
         SRXLineEdit->setFocus();
     }
 
-    i = world->getEntityId(currentQrz);
-    //qDebug() << "MainWindow::slotQRZTextChanged: " << qrzLineEdit->text() << " / EntityID: " << QString::number(i) << endl;
-    updateStatusBar(world->getEntityName(currentQrz));
+    i = world->getQRZARRLId(currentQrz);
+    qDebug() << "MainWindow::slotQRZTextChanged: " << qrzLineEdit->text() << " / EntityID: " << QString::number(i) << endl;
+    if (i>0){
+        updateStatusBar(world->getQRZEntityName(currentQrz) + "  -  CQ: " + QString::number(world->getQRZCqz(currentQrz)) + "  -  ITU: " + QString::number(world->getQRZItuz(currentQrz)));
+    }
+    else
+    {
+        updateStatusBar(tr("Ready..."));
+    }
 
 }
 
@@ -679,11 +693,11 @@ void MainWindow::keyPressEvent(QKeyEvent *event){
     switch (event->key()) {
     case Qt::Key_Return:
         // ENTER PRESSED
-        slotQRZReturnPressed();
+        //slotQRZReturnPressed();
         break;
     case Qt::Key_Enter:
         // ENTER PRESSED
-        slotQRZReturnPressed();
+       // slotQRZReturnPressed();
         break;
 
     default:
@@ -692,6 +706,31 @@ void MainWindow::keyPressEvent(QKeyEvent *event){
 
     }
 }
+int MainWindow::checkIfWorkedB4(const QString _qrz)
+{
+    //qDebug() << "MainWindow::checkIfWorkedB4: " << _qrz << endl;
+    QSqlQuery query;
+    QString queryString;
+    queryString = "SELECT id FROM log WHERE qrz=='" + _qrz +"'";
+    //qDebug() << "World::checkIfWorkedB4: " << queryString << endl;
+    query.exec(queryString);
+    query.next();
+    int i = (query.value(0)).toInt();
+
+    if (i){
+        //qDebug() << "MainWindow::checkIfWorkedB4: " <<_qrz << " = " <<  QString::number(i) << " - Worked Before: YES " << endl;
+        return 1;
+    }else
+    {
+        //qDebug() << "MainWindow::checkIfWorkedB4: " <<_qrz << " = " <<  QString::number(i) << " - Worked Before: NO" << endl;
+        return -1;
+    }
+    return -1;
+
+
+}
+
+
 
 bool MainWindow::createConnection()
 {
@@ -793,4 +832,8 @@ void MainWindow::createData()
       query.exec("INSERT INTO mode (name) VALUES ('SSB')");
       query.exec("INSERT INTO mode (name) VALUES ('CW')");
       query.exec("INSERT INTO mode (name) VALUES ('RTTY')");
+
+
+      world->create(kontestDir);
+
 }

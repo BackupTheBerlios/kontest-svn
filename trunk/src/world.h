@@ -25,10 +25,14 @@ public:
     World(const QString _kontestDir);
     ~World();
     bool create(const QString _kontestDir);
-    int getEntityId(const QString _qrz);
-    QString getEntityName(const QString _qrz);
+
+    QString getQRZEntityName(const QString _qrz);
+    int getQRZCqz(const QString _qrz);
+    int getQRZItuz(const QString _qrz);
+    int getQRZARRLId(const QString _qrz);
 
 private:
+    int getPrefixId(const QString _qrz);
     bool readCTYDAT();
     void processLine(const QString _line);
     void createWorldModel();

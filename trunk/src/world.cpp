@@ -40,6 +40,7 @@ World::~World()
 
 bool World::create(const QString _kontestDir)
 {
+    qDebug() << "World::create: " << _kontestDir << endl;
     kontestDir = _kontestDir;
 
     if (readCTYDAT())
@@ -49,6 +50,7 @@ bool World::create(const QString _kontestDir)
     {
         created = false;
     }
+    return false;
 }
 
 void World::createWorldModel()
@@ -66,7 +68,7 @@ void World::createWorldModel()
 
 bool World::readCTYDAT()
 {
-    //qDebug() << "World::readCTYDAT(): " << kontestDir << endl;
+    qDebug() << "World::readCTYDAT(): " << kontestDir << endl;
 
     QString fileName;
     qint64 beginingOfFile;
@@ -99,13 +101,10 @@ bool World::readCTYDAT()
     //qDebug() << "World::readCTYDAT() - numberOfEntities: " << QString::number(numberOfEntities) << endl;
 
     file.seek(beginingOfFile);
+
     progressBarPosition = 0;
-
     QProgressDialog progress("Reading cty.dat...", "Abort reading", 0, numberOfLines, this);
-
     progress.setWindowModality(Qt::ApplicationModal);
-
-
 
     numberOfEntities = 0; // Reset this variable to reuse it and assign the "arrlid" to the entities (temp solution)
 
@@ -316,9 +315,9 @@ QStringList World::readZones (const QString &pref, const int _cq, const int _itu
 
 }
 
-int World::getEntityId(const QString _qrz)
+int World::getPrefixId(const QString _qrz)
 {
-    qDebug() << "World::getEntityId: " << _qrz << endl;
+    //qDebug() << "World::getPrefixId: " << _qrz << endl;
     int entityID = 0;
     int iaux1, iaux2;
     QString aux = (_qrz).toUpper();
@@ -350,8 +349,8 @@ int World::getEntityId(const QString _qrz)
     }
 
 
-    queryString = "SELECT entityid FROM prefixesofentity WHERE prefix=='" + aux + "'";
-    //qDebug() << "World::getEntityId: " << queryString << endl;
+    queryString = "SELECT id FROM prefixesofentity WHERE prefix=='" + aux + "'";
+    //qDebug() << "World::getPrefixId: " << queryString << endl;
     query.exec(queryString);
     query.next();
     entityID = (query.value(0)).toInt();
@@ -363,34 +362,85 @@ int World::getEntityId(const QString _qrz)
         while ((entityID <= 0) && (aux.length()>1) )
         {
             aux.chop(1);
-            queryString = "SELECT entityid FROM prefixesofentity WHERE prefix=='" + aux + "'";
+            queryString = "SELECT id FROM prefixesofentity WHERE prefix=='" + aux + "'";
             query.exec(queryString);
             query.next();
             entityID = (query.value(0)).toInt();
-            qDebug() << "World::getEntityId: en el while" << aux << " = " <<  QString::number(entityID) << endl;
+            //qDebug() << "World::getPrefixId: in the while" << aux << " = " <<  QString::number(entityID) << endl;
         }
       //  return entityID;
-                    qDebug() << "World::getEntityId: TRAS el while" << endl;
+     // qDebug() << "World::getPrefixId: AFTER the while" << endl;
     }
 
-    qDebug() << "World::getEntityId: (end) " << aux << " = " <<  QString::number(entityID) << endl;
+    //qDebug() << "World::getPrefixId: (end) " << aux << " = " <<  QString::number(entityID) << endl;
     //return (query.value(0)).toInt();
     return entityID;
 }
 
-QString World::getEntityName(const QString _qrz)
+QString World::getQRZEntityName(const QString _qrz)
 {
- //   qDebug() << "World::getEntityName: " << _qrz << endl;
+ //   qDebug() << "World::getQRZEntityName: " << _qrz << endl;
+
+    QSqlQuery query;
+    int prefixIDNumber = getPrefixId(_qrz);
+
+    queryString = "SELECT entityid FROM prefixesofentity WHERE id=='" + QString::number(prefixIDNumber) +"'";
+    //qDebug() << "World::getQRZEntityName: queryString-1: " << queryString << endl;
+    query.exec(queryString);
+    query.next();
+    prefixIDNumber = (query.value(0)).toInt();
+    //qDebug() << "World::getQRZEntityName: " <<_qrz << " = " <<  (query.value(0)).toString() << endl;
+
+    queryString = "SELECT name FROM entity WHERE id=='" + QString::number(prefixIDNumber) +"'";
+    //qDebug() << "World::getQRZEntityName: queryString-2: " << queryString << endl;
+    query.exec(queryString);
+    query.next();
+    //qDebug() << "World::getQRZEntityName end: " << _qrz << " = " << (query.value(0)).toString() << endl;
+
+    return (query.value(0)).toString();
+}
+
+int World::getQRZCqz(const QString _qrz)
+{
+    //qDebug() << "World::getQRZCqz: " << _qrz << endl;
 
     QSqlQuery query;
 
-    int arrlIDNumber = getEntityId(_qrz);
-    queryString = "SELECT name FROM entity WHERE arrlid=='" + QString::number(arrlIDNumber) +"'";
+    int prefixIdNumber = getPrefixId(_qrz);
+    queryString = "SELECT cqz FROM prefixesofentity WHERE id=='" + QString::number(prefixIdNumber) +"'";
     query.exec(queryString);
     query.next();
-    //qDebug() << "World::getEntityName: " <<_qrz << " = " <<  (query.value(0)).toString() << endl;
-    return (query.value(0)).toString();
-
+    //qDebug() << "World::getQRZCqz queryString: " << queryString << endl;
+    //prefixIdNumber = (query.value(0)).toInt();
+    //qDebug() << "World::getQRZCqz: " <<_qrz << " = " <<  prefixIdNumber << endl;
+    return (query.value(0)).toInt();
 
 }
+int World::getQRZItuz(const QString _qrz)
+{
+    //qDebug() << "World::getQRZItuz: " << _qrz << endl;
 
+    QSqlQuery query;
+
+    int prefixIdNumber = getPrefixId(_qrz);
+    queryString = "SELECT ituz FROM prefixesofentity WHERE id=='" + QString::number(prefixIdNumber) +"'";
+    query.exec(queryString);
+    query.next();
+    //qDebug() << "World::getQRZItuz: " <<_qrz << " = " <<  (query.value(0)).toInt() << endl;
+    return (query.value(0)).toInt();
+}
+
+int World::getQRZARRLId(const QString _qrz)
+{
+    //qDebug() << "World::getQRZARRLId: " << _qrz << endl;
+
+    QSqlQuery query;
+
+    int prefixIdNumber = getPrefixId(_qrz);
+    queryString = "SELECT entityid FROM prefixesofentity WHERE id=='" + QString::number(prefixIdNumber) +"'";
+    query.exec(queryString);
+    query.next();
+    //qDebug() << "World::getQRZARRLId: " <<_qrz << " = " <<  (query.value(0)).toInt() << endl;
+    return (query.value(0)).toInt();
+
+}

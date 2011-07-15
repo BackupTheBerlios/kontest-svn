@@ -89,6 +89,7 @@ private:
     void showMenuRightButtoncreateActions();
     void righButtonLogMenu(const int trow);
     QString readDataFromUI(); // Reads the QSO data from the UI and returns the SQL Query
+    int checkIfWorkedB4(const QString _qrz);
 
     bool createConnection();
     void createData();
@@ -110,6 +111,7 @@ private:
 
     // <UI>
     QGroupBox *gridGroupBox;
+    QGroupBox *qrzgroupBox;
     QLineEdit *qrzLineEdit;
     QComboBox *bandComboBox, *modeComboBox;
     QDateEdit *dateEdit;
