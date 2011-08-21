@@ -27,16 +27,27 @@ public:
     bool create(const QString _kontestDir);
 
     QString getQRZEntityName(const QString _qrz);
+    QString getQRZEntityMainPrefix(const QString _qrz);
+    QString getQRZEntityMainPrefix(const int _entityN);
+
+    QString getQRZContinent(const QString _qrz);
+
+
     int getQRZCqz(const QString _qrz);
     int getQRZItuz(const QString _qrz);
     int getQRZARRLId(const QString _qrz);
 
+    bool isNewCQz(const int _cqz);
+    bool isNewEntity(const int _entityN);
+
 private:
     int getPrefixId(const QString _qrz);
     bool readCTYDAT();
-    void processLine(const QString _line);
+    QStringList processLine(const QString _line);
+    QStringList processLineP(const QString _line, const int _processingEntity);
     void createWorldModel();
     QStringList readZones(const QString &pref, const int _cq, const int _itu);
+    bool downloadCtyDat();
 
 
 
@@ -54,7 +65,7 @@ private:
     QString continentName, prefix;
     int howMany, continentId;
     double lat, lon, utc;
-    QString line;
+    //QString line;
     bool readingDataOfAnEntity;
     int nullValue;
 

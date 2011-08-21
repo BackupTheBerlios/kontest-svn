@@ -1,11 +1,14 @@
-Add QSO
-Remove QSO
-Edit QSO
-Save Log
++Add QSO
++Remove QSO
++Edit QSO
++Save Log
 Export log into ADIF
 Import log from ADIF
 Export log into Cabrillo
 Import log from Cabrillo
-QSO before functionality
-Find DXCC entity
++QSO before functionality
++Find DXCC entity
 Rules CQ WW DX SSB
+
+Create rules to check the ADIF (exporting)
+Create rules to check the ADIF (importing)

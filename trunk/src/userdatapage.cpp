@@ -31,7 +31,7 @@ UserDataPage::UserDataPage(QWidget *parent) : QWidget(parent){
    CQWPXCatBands << "All-Bands" << "Single-Band";
    CQWPXBands << "10m" << "15m" << "20m" << "40m" << "80m" << "160m";
    //CQWPXCatOverLay << "TB-WIRES" << "ROOKIE";
-   contestNames << "No Contest" <<"CQ-WW-DX-SSB" << "CQ-WW-DX-CW" << "CQ-WPX-SSB" << "CQ-WPX-CW";
+   contestNames << "No-Contest" <<"CQ-WW-SSB" << "CQ-WW-CW" << "CQ-WPX-SSB" << "CQ-WPX-CW";
 
    contestComboBox->addItems(contestNames);
    contestCatOperators->addItems(CQWPXCatOperators);
@@ -102,6 +102,7 @@ UserDataPage::UserDataPage(QWidget *parent) : QWidget(parent){
     mainLayout->addWidget(contestGroupBox);
     mainLayout->addStretch(1);
 
+    connect(qrzLineEdit, SIGNAL(textChanged(QString)), this, SLOT(slotQRZTextChanged() ) );
 
     connect(contestComboBox, SIGNAL(activated(int)), this, SLOT(slotContestChanged(int)) );
     connect(contestCatOperators, SIGNAL(activated(int)), this, SLOT(slotContestCatOperatorsChanged(int)) );
@@ -125,6 +126,7 @@ QString UserDataPage::getContest(){
 
 QString UserDataPage::getContestCategory(){
    //return contestCategoriesComboBox->currentText();
+   return "Contest-Category";
 }
 
 
@@ -279,3 +281,54 @@ if (i==0){
 
 }
 }
+
+void UserDataPage::slotQRZTextChanged()
+{
+    qDebug() << "UserDataPage::slotQRZTextChanged: " << qrzLineEdit->text() << " / Length: " << QString::number((qrzLineEdit->text()).size()) << endl;
+    //int i;
+    qrzLineEdit->setText(((qrzLineEdit->text())).simplified());
+    qrzLineEdit->setText((qrzLineEdit->text()).toUpper());
+
+    cqzLineEdit->setText(QString::number(world.getQRZCqz(qrzLineEdit->text())));
+    ituzLineEdit->setText(QString::number(world.getQRZItuz(qrzLineEdit->text())));
+
+}
+
+int UserDataPage::getCQz(){
+    return (cqzLineEdit->text()).toInt();
+}
+
+int UserDataPage::getITUz(){
+    return (ituzLineEdit->text()).toInt();
+}
+
+bool UserDataPage::setStationQrz(const QString _qrz){
+    qrzLineEdit->setText((_qrz).toUpper());
+    return true;
+}
+bool UserDataPage::setContest(const QString _contest){
+    //contestNames << "No-Contest" <<"CQ-WW-DX-SSB" << "CQ-WW-DX-CW" << "CQ-WPX-SSB" << "CQ-WPX-CW";
+    int i = contestComboBox->findText(_contest, Qt::MatchExactly);
+
+    if (i>-1){
+        contestComboBox->setCurrentIndex(i);
+        return true;
+    }else{
+        contestComboBox->setCurrentIndex(0);
+        return false;
+    }
+
+    return false;
+}
+
+
+bool UserDataPage::setCQz(const int _cqz){
+    cqzLineEdit->setText(QString::number(_cqz));
+    return true;
+}
+
+bool UserDataPage::setITUz(const int _ituz){
+    ituzLineEdit->setText(QString::number(_ituz));
+    return true;
+}
+

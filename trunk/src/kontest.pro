@@ -21,7 +21,10 @@ SOURCES += main.cpp \
     mainwindow.cpp \
     world.cpp \
     logwindow.cpp \
-    filemanager.cpp
+    filemanager.cpp \
+    contest.cpp \
+    contestcqwwdxssb.cpp \
+    database.cpp
 
 HEADERS += \
     setupdialog.h \
@@ -30,7 +33,13 @@ HEADERS += \
     mainwindow.h \
     world.h \
     logwindow.h \
-    filemanager.h
+    filemanager.h \
+    contest.h \
+    contestcqwwdxssb.h \
+    database.h
 
 OTHER_FILES += \
     TODO.txt
+
+FORMS += \
+    uidx.ui

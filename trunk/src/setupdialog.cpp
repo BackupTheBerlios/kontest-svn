@@ -1,9 +1,15 @@
 
-
 #include "setupdialog.h"
+#include <QDebug>
 
 
-SetupDialog::SetupDialog(){
+SetupDialog::SetupDialog(const QString _configFile){
+
+    configFileName = _configFile;
+
+
+
+    qDebug() << "SetupDialog::SetupDialog: " << configFileName << endl;
 
     contentsWidget = new QListWidget;
     contentsWidget->setViewMode(QListView::IconMode);
@@ -47,6 +53,7 @@ SetupDialog::SetupDialog(){
     setLayout(mainLayout);
 
     setWindowTitle(tr("Config Dialog"));
+    slotReadConfigData();
 }
 
 void SetupDialog::createIcons()
@@ -82,20 +89,14 @@ void SetupDialog::changePage(QListWidgetItem *current, QListWidgetItem *previous
     pagesWidget->setCurrentIndex(contentsWidget->row(current));
 }
 
-void SetupDialog::slotReadData(){
-    //stationCall = ;
-    //int contest;
-    //int contestCategory;
-    //int modes;
 
-}
 
 void SetupDialog::slotOkButtonClicked(){
 
     if ((userDataPage->getStationQrz()).length() < 3){ // There are no valid calls with less than 3 Chars
         return;
     }
-    QFile file ("kontestrc");
+    QFile file (configFileName);
     QString tmp;
     tmp = "true";
     if (file.open (QIODevice::WriteOnly)){
@@ -104,18 +105,19 @@ void SetupDialog::slotOkButtonClicked(){
     int contest;
     int contestCategory;
     int modes;*/
+//QRZ/CQ/ITU/CONTEST
 
-
-        stream << "<qrzused:" << QString::number((userDataPage->getStationQrz()).length()) << ">" << userDataPage->getStationQrz() << endl;
-        stream << "<contest:" << QString::number((userDataPage->getContest()).length())  << ">" << userDataPage->getContest()  << endl;
-        stream << "<contestcategory:" << QString::number((userDataPage->getContestCategory()).length()) << ">" << userDataPage->getContestCategory() << endl;
-
-        //stream << "locator=" << (MyLocatorkLineEdit->text ()).toUpper () << endl;
-        //stream << "CallUsed=" << (UserDataPage.qrzLineEdit).text() << endl;
-        stream << "Operators=" << endl;
-        stream << "Mode=" << endl;
-        stream << "OperationMode=" << endl;
-        stream << "Category=" << endl;
+        stream << "qrzused="  << userDataPage->getStationQrz() << ";" << endl;
+        stream << "contest="  << userDataPage->getContest()  <<   ";" << endl;
+        //stream << "contestcategory=" << userDataPage->getContestCategory() <<  ";" <<  endl;
+        stream << "cqz=" << QString::number(userDataPage->getCQz()) <<  ";" <<  endl;
+        stream << "ituz=" << QString::number(userDataPage->getITUz()) <<  ";" <<  endl;
+        //stream << "locator=" << (MyLocatorkLineEdit->text ()).toUpper () <<  ";" << endl;
+        //stream << "CallUsed=" << (UserDataPage.qrzLineEdit).text() <<  ";" << endl;
+        //stream << "Operators=" <<  ";" << endl;
+        //stream << "Mode=" << ";" <<  endl;
+        //stream << "OperationMode=" <<  ";" << endl;
+        //stream << "Category=" <<  ";" << endl;
 
         file.close ();
     }
@@ -123,3 +125,76 @@ void SetupDialog::slotOkButtonClicked(){
 
     close();
 }
+
+void SetupDialog::slotReadConfigData(){
+
+    QFile file(configFileName);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
+        qDebug() << "SetupDialog::slotReadConfigData() File not found" << configFileName << endl;
+        return;
+    }
+
+    while (!file.atEnd()) {
+        QByteArray line = file.readLine();
+        processConfigLine(line);
+    }
+
+}
+
+bool SetupDialog::processConfigLine(const QString _line){
+    qDebug() << "SetupDialog::processConfigLine: " << _line << endl;
+
+    QString line = _line.toUpper();
+    line.simplified();
+
+    QStringList values = line.split("=", QString::SkipEmptyParts);
+
+
+    if (line.startsWith('#')){
+        qDebug() << "SetupDialog::processConfigLine: Comment Line!" << endl;
+        return true;
+    }
+    if (!( (line.contains('=')) && (line.contains(';')))){
+        qDebug() << "SetupDialog::processConfigLine: Wrong Line!" << endl;
+        return false;
+    }
+    QString value = values.at(1);
+    int endValue = value.indexOf(';');
+    if (endValue>-1){
+
+        value = value.left(value.length() - (value.length() - endValue));
+    }
+
+
+
+    if (values.at(0) == "QRZUSED"){
+        qDebug() << "SetupDialog::processConfigLine: QRZUSED: " << value << endl;
+        userDataPage->setStationQrz(value);
+
+    }else if (values.at(0)=="CQZ"){
+       // qDebug() << "SetupDialog::processConfigLine: CQZ: " << endl;
+        userDataPage->setCQz((value).toInt());
+
+    }else if (values.at(0)=="ITUZ"){
+        //qDebug() << "SetupDialog::processConfigLine: ITUZ: " << endl;
+        userDataPage->setITUz((value).toInt());
+    }else if (values.at(0)=="CONTEST"){
+        //qDebug() << "SetupDialog::processConfigLine: CONTEST: " << endl;
+        userDataPage->setContest(value);
+    }else if (values.at(0)=="MODE"){
+        //qDebug() << "SetupDialog::processConfigLine: MODE: " << endl;
+
+    }else{
+        //qDebug() << "SetupDialog::processConfigLine: NONE: " << endl;
+    }
+
+
+
+    // Lines are: Option = value;
+
+
+    return true;
+
+
+}
+

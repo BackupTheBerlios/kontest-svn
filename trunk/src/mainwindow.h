@@ -1,9 +1,12 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 #include <QtGui>
+#include "database.h"
 #include "setupdialog.h"
 #include "world.h"
 #include "filemanager.h"
+#include "contest.h"
+#include "contestcqwwdxssb.h"
 
 class QTimer;
 class QDateTime;
@@ -17,13 +20,14 @@ class QStatusBar;
 class QMenuBar;
 class QMenu;
 class QMessageBox;
+class QTextEdit;
 
 class QPoint;
 
 class QGroupBox;
 
 class QTableView;
-class QSqlRelationalTableModel;
+
 
 
 /*
@@ -34,6 +38,8 @@ class QSplitter;
 
 class QLabel;
 
+
+
 enum
 {
     Log_Id = 0,
@@ -42,6 +48,17 @@ enum
     Log_ModeId = 3,
     Log_DateId = 4,
     Log_TimeId = 5
+};
+enum
+{
+    NoContest = 0,
+    CQ_WW_SSB = 1,
+    CQ_WW_CW = 2,
+    CQ_WPX_SSB = 3,
+    CQ_WPX_CW = 4,
+    CQ_WPX_RTTY = 5
+
+
 };
 
 
@@ -59,15 +76,21 @@ private slots:
     void slotQRZTextChanged();
     void slotSRXTextChanged();
     void slotSTXTextChanged();
+    void slotModeComboBoxChanged();
+    void slotBandComboBoxChanged();
     void slotOKButtonClicked();
     void slotSpotItButtonClicked();
     void slotClearButtonClicked();
     void slotUpdateTime();
     void slotLogWinShow();
+    void slotScoreWinShow();
     void slotSetup();
     void slotQsoDelete();
     void slotrstTXTextChanged();
     void slotrstRXTextChanged();
+    void slotADIFExport();
+    void slotADIFImport();
+    void slotCabrilloExport();
 
     void openFile();
     void saveFile();
@@ -79,20 +102,32 @@ private slots:
 private:
 
     void createUI();
-    void createMenus();
-    void createActions();
+    void createUICQWW();
+    void createUIDX();
+    void createMenusCommon();
+    void createMenusCQWW();
+    void createActionsCommon();
+    void createActionsCQWW();
     void createlogPanel();
     void createlogModel();
+    void createScorePanel();
+
+    void  initialContestModeConfiguration();
+
     void createKeyEvents();
     void updateStatusBar(const QString statusm);
+    void updateQSOStatusBar(const QString statusm);
     bool readCtyFile();
     void showMenuRightButtoncreateActions();
     void righButtonLogMenu(const int trow);
     QString readDataFromUI(); // Reads the QSO data from the UI and returns the SQL Query
     int checkIfWorkedB4(const QString _qrz);
+    bool checkContest();
 
     bool createConnection();
     void createData();
+    bool processConfigLine(const QString _line);
+    void readConfigData();
 
 
 
@@ -108,6 +143,8 @@ private:
     QTableView *logView;
     QLabel *logLabel;
 
+    QWidget *scoreWindow;
+    QTextEdit *scoreTextEdit;
 
     // <UI>
     QGroupBox *gridGroupBox;
@@ -116,7 +153,7 @@ private:
     QComboBox *bandComboBox, *modeComboBox;
     QDateEdit *dateEdit;
     QTimeEdit *timeEdit;
-    QStatusBar *statusBar;
+    QStatusBar *statusBar, *qsoStatusBar;
     QString statusBarMessage;
 
     QMenu *fileMenu;
@@ -132,6 +169,11 @@ private:
     QAction *removeAct;
     QAction *logWinAct;
     QAction *setupAct;
+    QAction *scoreWinAct;
+    QAction *scoreeWinAct;
+    QAction *ADIFExport;
+    QAction *ADIFImport;
+    QAction *CabrilloExport;
 
     QAction *loggWinAct;
     QAction *delQSOAct;
@@ -147,11 +189,28 @@ private:
     QTimer *timer;
     QDateTime *dateTime;
 
-    QString kontestDir;
+    QString kontestDir, configFileName;
+
     QString currentQrz;
     QString previousQrz;
+
     QString stx;
     QString srx;
+    // Station Setup
+    bool configured;
+    QString stationQRZ;
+    int my_CQz, my_ITUz, defaultMode, defaultBand, currentMode, currentBand;
+
+    // Station Setup
+
+    // Contest
+    int contestMode, points, qsoPoints, multipliers, qsoMultiplier;
+
+    Contest *contest;
+    // Contest
+
+    DataBase *db;
+
 
 protected:
     void keyPressEvent(QKeyEvent *event);

@@ -1,13 +1,15 @@
 #ifndef FILEMANAGER_H
 #define FILEMANAGER_H
+#include <QObject>
 #include <QtGui>
 #include <QString>
+#include <QFileDialog>
 #include <QFile>
+#include <QSqlQuery>
 #include <QStringList>
-
-class QStringList;
-class QFileDialog;
-
+#include <QSqlRecord>
+#include <QProgressDialog>
+#include <QMessageBox>
 
 class FileManager
 {
@@ -15,18 +17,21 @@ public:
     FileManager();
     FileManager(const QString _kontestDir);
     ~FileManager();
-   // bool createWorld(const QString _kontestDir);
+
     bool adifReadLog(const QString& tfileName);
-    bool adifLogExport();
+    bool adifLogExport(const QString& _fileName);
+    bool cabrilloLogExport(const QString& _fileName);
+
 private:
+    bool adifLogExportToFile(const QString& _fileName);
+    bool cabrilloLogExportToFile(const QString& _fileName);
+    bool processQsoReadingADIF(const QStringList _line);
+    bool checkADIFValidFormat(const QStringList _qs);
 
-    void processLine(const QString _line);
-    //bool readCTYDAT();
-    //void processLine(const QString _line);
-
-    //bool created;
+    bool printQs(const QString _q, const QStringList _line);
 
     QString kontestDir;
+    QProgressBar *progressBar;
 
 
 
