@@ -25,7 +25,8 @@ class QTextEdit;
 class QPoint;
 
 class QGroupBox;
-
+class QTabWidget;
+class QFrame;
 class QTableView;
 
 
@@ -104,6 +105,7 @@ private:
     void createUI();
     void createUICQWW();
     void createUIDX();
+
     void createMenusCommon();
     void createMenusCQWW();
     void createActionsCommon();
@@ -143,18 +145,22 @@ private:
     QTableView *logView;
     QLabel *logLabel;
 
-    QWidget *scoreWindow;
+    QWidget *scoreWindow; //, dxWindow;
     QTextEdit *scoreTextEdit;
 
     // <UI>
-    QGroupBox *gridGroupBox;
-    QGroupBox *qrzgroupBox;
-    QLineEdit *qrzLineEdit;
+    QGroupBox *gridGroupBox, *qrzgroupBox;
+    QFrame *dxUpLeftInputFrame, *dxUpRightOutputFrame;
+
+    QLineEdit *qrzLineEdit, *nameLineEdit, *qthLineEdit, *locatorLineEdit;
     QComboBox *bandComboBox, *modeComboBox;
     QDateEdit *dateEdit;
     QTimeEdit *timeEdit;
     QStatusBar *statusBar, *qsoStatusBar;
     QString statusBarMessage;
+
+    QTabWidget *dxBottonTab, *dxUpLeftTab, *dxUpRightTab;
+
 
     QMenu *fileMenu;
     QMenu *toolMenu;
@@ -185,6 +191,22 @@ private:
     QPushButton *OKButton, *spotItButton, *clearButton;
     QStringList bands;
     QStringList modes;
+
+    // UI DX
+    QLabel *entityAwardLabel, *iotaAwardLabel;
+    QLabel *infoLabel1, *infoLabel2;
+    QLabel *bandLabel1, *bandLabel2, *bandLabel3, *bandLabel4;
+    QLabel *bandLabel5, *bandLabel6, *bandLabel7, *bandLabel8;
+    QLabel *bandLabel9, *bandLabel10, *bandLabel11, *bandLabel12;
+    QLabel *continentLabel, *prefixLabel, *cqzLabel, *ituzLabel;
+    QLabel *gradShortLabel, *distShortLabel;
+    QLabel *gradLongLabel, *distLongLabel;
+    QLabel *dxccLabel, *wazLabel;
+    QComboBox *iotaContinentComboBox, *entityAwardComboBox;
+    QLineEdit *iotaNumberLineEdit;
+    QTextEdit *commentTextEdit;
+    // UI DX
+
     // </UI>
     QTimer *timer;
     QDateTime *dateTime;
@@ -200,6 +222,8 @@ private:
     bool configured;
     QString stationQRZ;
     int my_CQz, my_ITUz, defaultMode, defaultBand, currentMode, currentBand;
+    int currentLog; // This is to be able to manage multiple logs without showing
+                    // them all at the same time.
 
     // Station Setup
 

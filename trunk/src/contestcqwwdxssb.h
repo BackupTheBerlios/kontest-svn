@@ -16,19 +16,27 @@ public:
     ~ContestCQWWDXSSB();
 
     bool isMultiplier(const QStringList _qs);
-    int getPoints(const QStringList _qs);
+    // Receives:  QStringList _qs;
+    //_qs << DX-Entity << DXCQz << DX-band;
+
+    int getQSOPoints(const QStringList _qs);
+    // Receives:  QStringList _qs;
+    //_qs << DX-Entity << DX-Continent
+
     bool saveFileToSend(const QString& _fileName);
+    int getTotalScore();
+    int getMultipliers();
+    int getPoints();
 
-
-  //  QTextEdit printScore();
-
+// NA in the constructor is North America for scoring purposes
 
 private:
 
 
-    QString myEntity, myCQz, myContinent, NA;
+    QString myEntity, myCQz, myContinent, NA, thiscontest, mycategory, arrlSection, stationQrz, claimedScore, name, address, operators, soapbox, club, createdby;
     bool isValidCQz(const QString _cqz);
     bool isValidEntity(const QString _ent);
+
 
 
 };

@@ -14,6 +14,7 @@ MainWindow::MainWindow()
     defaultBand = 0;
     currentMode = 0;
     currentBand = 0;
+    currentLog = 0;
     points = 0;
     multipliers = 0;
     qsoPoints = 0;
@@ -24,6 +25,7 @@ MainWindow::MainWindow()
 
     logView->setContextMenuPolicy(Qt::CustomContextMenu);
     logView->setSortingEnabled(true);
+
 
     scoreTextEdit = new QTextEdit;
 
@@ -62,6 +64,9 @@ MainWindow::MainWindow()
 
     previousQrz = "";
     qrzLineEdit = new QLineEdit;
+    nameLineEdit = new QLineEdit;
+    qthLineEdit = new QLineEdit;
+    locatorLineEdit = new QLineEdit;
     rstTXLineEdit = new QLineEdit;
     rstRXLineEdit = new QLineEdit;
     STXLineEdit = new QLineEdit;
@@ -77,6 +82,44 @@ MainWindow::MainWindow()
     clearButton = new QPushButton(tr("&Clear"), this);
     //mainToolBar = new QToolBar(this);
     //numberOfQso = 1;
+
+    // UI DX
+    infoLabel1 = new QLabel(tr("Status bar..."));
+    infoLabel2 = new QLabel(tr("DX Entity"));
+    bandLabel1 = new QLabel(tr("10M"));
+    bandLabel2 = new QLabel(tr("15M"));
+    bandLabel3 = new QLabel(tr("20M"));
+    bandLabel4 = new QLabel(tr("40M"));
+    bandLabel5 = new QLabel(tr("80M"));
+    bandLabel6 = new QLabel(tr("160M"));
+    bandLabel7 = new QLabel(tr("2M"));
+    bandLabel8 = new QLabel(tr("6M"));
+    bandLabel9 = new QLabel(tr("12M"));
+    bandLabel10 = new QLabel(tr("17M"));
+    bandLabel11 = new QLabel(tr("30M"));
+    bandLabel12 = new QLabel(tr("70CM"));
+    entityAwardLabel = new QLabel(tr("Award:"));
+    iotaAwardLabel = new QLabel(tr("IOTA:"));
+    iotaContinentComboBox = new QComboBox;
+    entityAwardComboBox = new QComboBox;
+    commentTextEdit = new QTextEdit;
+    continentLabel = new QLabel;
+    prefixLabel = new QLabel;
+    cqzLabel = new QLabel;
+    ituzLabel = new QLabel;
+    gradShortLabel = new QLabel;
+    distShortLabel = new QLabel;
+    gradLongLabel = new QLabel;
+    distLongLabel = new QLabel;
+    dxccLabel = new QLabel;
+    wazLabel = new QLabel;
+    logPanel = new QWidget;
+    loggWinAct = new QAction(tr("&Log Window"), this);
+    scoreeWinAct = new QAction(tr("&Score Window"), this);
+    scoreWindow = new QWidget;
+
+
+    // UI DX
 
     // </UI>
 
@@ -94,22 +137,22 @@ MainWindow::MainWindow()
 //**************************************************
     readConfigData();
 
+
     createUI();
 
 
-    logPanel = new QWidget;
-    scoreWindow = new QWidget;
+
+
 
     createlogModel();
     createlogPanel();
 
-    loggWinAct = new QAction(tr("&Log Window"), this);
-    scoreeWinAct = new QAction(tr("&Score Window"), this);
 
     loggWinAct->setShortcut(Qt::CTRL + Qt::Key_L);
     connect(loggWinAct, SIGNAL(triggered()), this, SLOT(slotLogWinShow()));
-    logPanel->addAction(loggWinAct);
-    logPanel->addAction(scoreeWinAct);
+
+    //logPanel->addAction(loggWinAct);
+    //logPanel->addAction(scoreeWinAct);
 
     scoreeWinAct->setShortcut(Qt::CTRL + Qt::Key_P);
     connect(scoreeWinAct, SIGNAL(triggered()), this, SLOT(slotScoreWinShow()));
@@ -125,12 +168,10 @@ MainWindow::MainWindow()
 
 
 
-
-
-
 }
 
 void MainWindow::createUI(){
+
 
 
     if ( (contestMode == CQ_WW_SSB) || (contestMode == CQ_WW_CW) ){
@@ -150,8 +191,6 @@ void MainWindow::createUI(){
         createActionsCommon();
         createMenusCommon();
     }
-
-
 
 
 }
@@ -226,26 +265,31 @@ void MainWindow::slotQRZReturnPressed()
         }
     }
 
-
 }
 
 QString MainWindow::readDataFromUI()
 {
     qDebug() << "MainWindow::readDataFromUI: " << endl;
-
+    QSqlQuery query;
     QString tqrz = qrzLineEdit->text();
-    QString tsrx = SRXLineEdit->text();
-    QString tstx = STXLineEdit->text();
+
     int tband = 1 + bandComboBox->currentIndex();
     int tmode = 1 + modeComboBox->currentIndex();
     QString tdate = (dateEdit->date()).toString("yyyy/MM/dd");
     QString ttime = (timeEdit->time()).toString("hh:mm:ss");
-    QString stringQuery;
+    QString stringQuery, queryString, freq, tstx, tsrx;
+    QString trsttx = rstTXLineEdit->text();
+    QString trstrx = rstRXLineEdit->text();
     int dxcc = world->getQRZARRLId(tqrz);
+
+
+
 
     switch (contestMode) {
 
         case CQ_WW_SSB:
+            tsrx = SRXLineEdit->text();
+            tstx = STXLineEdit->text();
             //qDebug() << "MainWindow::slotQRZTextChanged: CQ-WW-SSB:" << endl;
             if ( ( tsrx.toInt() ) < 1    ){
                 return "";
@@ -253,8 +297,17 @@ QString MainWindow::readDataFromUI()
             if ( ( ( tqrz.length() ) < 3 ) || (dxcc < 1 ) ) {
                 return "";
             }
+            //TODO: The transmiter is fixed to 0, as only single/single is supported now
 
-            stringQuery = QString("INSERT INTO log (call, bandid, modeid, qso_date, time_on, srx, stx, cqz, dxcc, points, multiplier) values('%1','%2','%3','%4','%5','%8','%7','%9','%10','%11','%12')").arg(tqrz).arg(tband).arg(tmode).arg(tdate).arg(ttime).arg(tsrx).arg(tstx).arg(tsrx).arg(dxcc).arg(qsoPoints).arg(qsoMultiplier);
+
+            //TODO: Freq is defined by the band until some kind of freq-read is implemented
+            queryString = QString("SELECT cabrillo FROM band WHERE id='%1'").arg(tband);
+            query.exec(queryString);
+            query.next();
+            freq = query.value(0).toString();
+            qDebug() << "MainWindow::readDataFromUI: FREQ: " << freq << endl;
+
+            stringQuery = QString("INSERT INTO log (call, bandid, modeid, qso_date, time_on, srx, stx, cqz, dxcc, points, multiplier, station_callsign, freq, rst_sent, rst_rcvd, lognumber, transmiterid) values('%1','%2','%3','%4','%5','%8','%7','%9','%10','%11','%12','%13','%14','%15','%16','%17','0')").arg(tqrz).arg(tband).arg(tmode).arg(tdate).arg(ttime).arg(tsrx).arg(tstx).arg(tsrx).arg(dxcc).arg(qsoPoints).arg(qsoMultiplier).arg(stationQRZ).arg(freq).arg(trsttx).arg(trstrx).arg(currentLog);
 
         break;
         case CQ_WW_CW:
@@ -262,8 +315,8 @@ QString MainWindow::readDataFromUI()
             if ((SRXLineEdit->text()).toInt() < 1    ){
                 return "";
             }
-
-            stringQuery = QString("INSERT INTO log (call, bandid, modeid, qso_date, time_on, srx, stx, points, multiplier) values('%1','%2','%3','%4','%5','%8','%7','%9','%10')").arg(tqrz).arg(tband).arg(tmode).arg(tdate).arg(ttime).arg(tsrx).arg(tstx).arg(0).arg(0);
+            //TODO: The transmiter is fixed to 0, as only single/single is supported now
+            stringQuery = QString("INSERT INTO log (call, bandid, modeid, qso_date, time_on, srx, stx, cqz, dxcc, points, multiplier, transmiterid) values('%1','%2','%3','%4','%5','%8','%7','%9','%10','%11','%12', '0')").arg(tqrz).arg(tband).arg(tmode).arg(tdate).arg(ttime).arg(tsrx).arg(tstx).arg(tsrx).arg(dxcc).arg(qsoPoints).arg(qsoMultiplier);
         break;
         default:
             qDebug() << "MainWindow::slotQRZTextChanged: Default:" << endl;
@@ -284,7 +337,8 @@ QString MainWindow::readDataFromUI()
 void MainWindow::createlogPanel()
 {
     logView->setModel(logModel);
-    QSqlQuery query("SELECT * FROM log");
+    QString stringQuery = QString("SELECT * FROM log WHERE lognumber='%1'").arg(currentLog);
+    QSqlQuery query(stringQuery);
     QSqlRecord rec = query.record(); // Number of columns
     int columns = rec.count();
 
@@ -292,10 +346,21 @@ void MainWindow::createlogPanel()
         logView->setColumnHidden(i, true);
     }
 
+    QVBoxLayout *layout = new QVBoxLayout;
 
     switch (contestMode) {
 
         case CQ_WW_SSB:
+        logLabel = new QLabel(tr("Log"));
+        logLabel->setBuddy(logView);
+
+        layout->addWidget(logLabel);
+        layout->addWidget(logView);
+        logPanel->setLayout(layout);
+
+        logPanel->addAction(loggWinAct);
+        logPanel->addAction(scoreeWinAct);
+
             columns = rec.indexOf("call");
             logView->setColumnHidden(columns, false);
             columns = rec.indexOf("qso_date");
@@ -306,9 +371,13 @@ void MainWindow::createlogPanel()
             logView->setColumnHidden(columns, false);
             columns = rec.indexOf("modeid");
             logView->setColumnHidden(columns, false);
+            columns = rec.indexOf("rst_sent");
+            logView->setColumnHidden(columns, false);
             columns = rec.indexOf("stx");
             logView->setColumnHidden(columns, false);
             columns = rec.indexOf("srx");
+            logView->setColumnHidden(columns, false);
+            columns = rec.indexOf("rst_rcvd");
             logView->setColumnHidden(columns, false);
             columns = rec.indexOf("points");
             logView->setColumnHidden(columns, false);
@@ -317,6 +386,16 @@ void MainWindow::createlogPanel()
 
         break;
         case CQ_WW_CW:
+            logLabel = new QLabel(tr("Log"));
+        logLabel->setBuddy(logView);
+
+        layout->addWidget(logLabel);
+        layout->addWidget(logView);
+        logPanel->setLayout(layout);
+
+        logPanel->addAction(loggWinAct);
+        logPanel->addAction(scoreeWinAct);
+
             columns = rec.indexOf("call");
             logView->setColumnHidden(columns, false);
             columns = rec.indexOf("qso_date");
@@ -327,7 +406,11 @@ void MainWindow::createlogPanel()
             logView->setColumnHidden(columns, false);
             columns = rec.indexOf("modeid");
             logView->setColumnHidden(columns, false);
+            columns = rec.indexOf("rst_sent");
+            logView->setColumnHidden(columns, false);
             columns = rec.indexOf("stx");
+            logView->setColumnHidden(columns, false);
+            columns = rec.indexOf("rst_rcvd");
             logView->setColumnHidden(columns, false);
             columns = rec.indexOf("srx");
             logView->setColumnHidden(columns, false);
@@ -359,12 +442,6 @@ void MainWindow::createlogPanel()
     logView->resizeColumnsToContents();
     logView->horizontalHeader()->setStretchLastSection(true);
 
-    logLabel = new QLabel(tr("Log"));
-    logLabel->setBuddy(logView);
-    QVBoxLayout *layout = new QVBoxLayout;
-    layout->addWidget(logLabel);
-    layout->addWidget(logView);
-    logPanel->setLayout(layout);
 
 
 }
@@ -402,8 +479,8 @@ is a foreign key that maps with field id of table city, and that
 the view should present the city's name field to the user.
 
 */
-
-    QSqlQuery q("select * from log");
+    QString stringQuery = QString("SELECT * FROM log WHERE lognumber='%1'").arg(currentLog);
+    QSqlQuery q(stringQuery);
     QSqlRecord rec = q.record();
 
     int nameCol;
@@ -412,36 +489,41 @@ the view should present the city's name field to the user.
     logModel = new QSqlRelationalTableModel(this);
     logModel->setTable("log");
 
+
     switch (contestMode) {
+
         case CQ_WW_SSB:
-            nameCol = rec.indexOf("bandid");
-            logModel->setRelation(nameCol, QSqlRelation("band", "id", "name"));
-            nameCol = rec.indexOf("modeid");
-            logModel->setRelation(nameCol, QSqlRelation("mode", "id", "name"));            
-            nameCol = rec.indexOf("id");
-            logModel->setSort(nameCol, Qt::AscendingOrder);
-            nameCol = rec.indexOf("call");
-            logModel->setHeaderData(nameCol, Qt::Horizontal,tr("QRZ"));
-            nameCol = rec.indexOf("bandid");
-            logModel->setHeaderData(nameCol, Qt::Horizontal, tr("Band"));
-            nameCol = rec.indexOf("modeid");
-            logModel->setHeaderData(nameCol, Qt::Horizontal, tr("Mode"));
-            nameCol = rec.indexOf("qso_date");
-            logModel->setHeaderData(nameCol, Qt::Horizontal, tr("Date"));
-            nameCol = rec.indexOf("time_on");
-            logModel->setHeaderData(nameCol, Qt::Horizontal, tr("Time"));
-            nameCol = rec.indexOf("srx");
-            logModel->setHeaderData(nameCol, Qt::Horizontal, tr("SRX"));
-            nameCol = rec.indexOf("stx");
-            logModel->setHeaderData(nameCol, Qt::Horizontal, tr("STX"));
-            nameCol = rec.indexOf("points");
-            logModel->setHeaderData(nameCol, Qt::Horizontal, tr("Points"));
-            nameCol = rec.indexOf("multiplier");
-            logModel->setHeaderData(nameCol, Qt::Horizontal, tr("Multiplier"));
+    nameCol = rec.indexOf("bandid");
+    logModel->setRelation(nameCol, QSqlRelation("band", "id", "name"));
+    nameCol = rec.indexOf("modeid");
+    logModel->setRelation(nameCol, QSqlRelation("mode", "id", "name"));
+    nameCol = rec.indexOf("id");
+    logModel->setSort(nameCol, Qt::AscendingOrder);
+    nameCol = rec.indexOf("call");
+    logModel->setHeaderData(nameCol, Qt::Horizontal,tr("QRZ"));
+    nameCol = rec.indexOf("bandid");
+    logModel->setHeaderData(nameCol, Qt::Horizontal, tr("Band"));
+    nameCol = rec.indexOf("modeid");
+    logModel->setHeaderData(nameCol, Qt::Horizontal, tr("Mode"));
+    nameCol = rec.indexOf("qso_date");
+    logModel->setHeaderData(nameCol, Qt::Horizontal, tr("Date"));
+    nameCol = rec.indexOf("time_on");
+    logModel->setHeaderData(nameCol, Qt::Horizontal, tr("Time"));
+    nameCol = rec.indexOf("srx");
+    logModel->setHeaderData(nameCol, Qt::Horizontal, tr("SRX"));
+    nameCol = rec.indexOf("rst_sent");
+    logModel->setHeaderData(nameCol, Qt::Horizontal, tr("RSTtx"));
+    nameCol = rec.indexOf("stx");
+    logModel->setHeaderData(nameCol, Qt::Horizontal, tr("STX"));
+    nameCol = rec.indexOf("rst_rcvd");
+    logModel->setHeaderData(nameCol, Qt::Horizontal, tr("RSTrx"));
+    nameCol = rec.indexOf("points");
+    logModel->setHeaderData(nameCol, Qt::Horizontal, tr("Points"));
+    nameCol = rec.indexOf("multiplier");
+    logModel->setHeaderData(nameCol, Qt::Horizontal, tr("Multiplier"));
 
         break;
         case CQ_WW_CW:
-
 
         break;
         default:
@@ -449,7 +531,6 @@ the view should present the city's name field to the user.
         logModel->setRelation(nameCol, QSqlRelation("band", "id", "name"));
         nameCol = rec.indexOf("modeid");
         logModel->setRelation(nameCol, QSqlRelation("mode", "id", "name"));
-
         nameCol = rec.indexOf("id");
         logModel->setSort(nameCol, Qt::AscendingOrder);
         nameCol = rec.indexOf("call");
@@ -462,15 +543,23 @@ the view should present the city's name field to the user.
         logModel->setHeaderData(nameCol, Qt::Horizontal, tr("Date"));
         nameCol = rec.indexOf("time_on");
         logModel->setHeaderData(nameCol, Qt::Horizontal, tr("Time"));
-
-
+        nameCol = rec.indexOf("srx");
+        logModel->setHeaderData(nameCol, Qt::Horizontal, tr("SRX"));
+        nameCol = rec.indexOf("rst_sent");
+        logModel->setHeaderData(nameCol, Qt::Horizontal, tr("RSTtx"));
+        nameCol = rec.indexOf("stx");
+        logModel->setHeaderData(nameCol, Qt::Horizontal, tr("STX"));
+        nameCol = rec.indexOf("rst_rcvd");
+        logModel->setHeaderData(nameCol, Qt::Horizontal, tr("RSTrx"));
         break;
-
     }
+
 
 logModel->select();
 
 }
+
+
 
 void MainWindow::createUICQWW()
 {
@@ -674,10 +763,14 @@ qDebug() << "MainWindow::checkContest: " << QString::number(contestMode) << endl
 
 
                 if (contest->isMultiplier(qs)){
-                    qsoStatus = tr("MULT");
+                    qrzgroupBox->setTitle(tr("NEW MULT"));
+                    //qsoStatus = tr("MULT");
+                    aux = " + (M + ";
                     qsoMultiplier = 1;
                 }else{
-                    qsoStatus = tr("NO MULT");
+                    //qsoStatus = tr("NO MULT");
+                    aux.clear();
+
                     qsoMultiplier = 0;
                 }
 
@@ -686,10 +779,18 @@ qDebug() << "MainWindow::checkContest: " << QString::number(contestMode) << endl
 
                 qs << QString::number(currentEntity) << world->getQRZContinent(currentQrz);
 
-                qsoPoints = contest->getPoints(qs);
-                qsoStatus = qsoStatus + " / " + QString::number(qsoPoints) + tr(" points");
+                qsoPoints = contest->getQSOPoints(qs);
+                if (aux == " + (M + ")
+                {
+                    qsoStatus = "Total: " + QString::number(contest->getTotalScore()) + aux + QString::number(qsoPoints) + " points)"; // qsoStatus + " / " + QString::number(qsoPoints) + tr(" points");
+                }
+                else
+                {
+                    qsoStatus = "Total: " + QString::number(contest->getTotalScore()) + " ( " + QString::number(qsoPoints) + " points)"; // qsoStatus + " / " + QString::number(qsoPoints) + tr(" points");
+                }
 
-                qDebug() << "MainWindow::checkContest Points: " << QString::number(contest->getPoints(qs)) << endl;
+
+                qDebug() << "MainWindow::checkContest Points: " << QString::number(contest->getQSOPoints(qs)) << endl;
                 qDebug() << "MainWindow::checkContest Continent: " << world->getQRZContinent(qrzLineEdit->text()) << endl;
 
 
@@ -847,6 +948,7 @@ void MainWindow::slotClearButtonClicked()
             STXLineEdit->setText( QString::number( world->getQRZCqz(stationQRZ) ) );
             bandComboBox->setCurrentIndex(currentBand);
             modeComboBox->setCurrentIndex(defaultMode);
+            qrzgroupBox->setTitle(tr("QRZ"));
 
         break;
         case CQ_WW_CW:
@@ -899,13 +1001,13 @@ void MainWindow::createMenusCommon(){
 
     toolMenu = menuBar()->addMenu(tr("&Tools"));
 
-    addAct = new QAction(tr("&Add Entry..."), this);
-    toolMenu->addAction(addAct);
+    //addAct = new QAction(tr("&Add Entry..."), this);
+    //toolMenu->addAction(addAct);
     //connect(addAct, SIGNAL(triggered()), addressWidget, SLOT(addEntry()));
 
-    editAct = new QAction(tr("&Edit Entry..."), this);
-    editAct->setEnabled(false);
-    toolMenu->addAction(editAct);
+    //editAct = new QAction(tr("&Edit Entry..."), this);
+    //editAct->setEnabled(false);
+    //toolMenu->addAction(editAct);
      //connect(editAct, SIGNAL(triggered()), addressWidget, SLOT(editEntry()));
 
     ADIFExport = new QAction(tr("&Export to ADIF..."), this);
@@ -919,20 +1021,17 @@ void MainWindow::createMenusCommon(){
 
     toolMenu->addSeparator();
 
-    removeAct = new QAction(tr("&Remove Entry"), this);
-    removeAct->setEnabled(false);
-    toolMenu->addAction(removeAct);
+    //removeAct = new QAction(tr("&Remove Entry"), this);
+    //removeAct->setEnabled(false);
+    //toolMenu->addAction(removeAct);
     //connect(removeAct, SIGNAL(triggered()), addressWidget, SLOT(removeEntry()));
 
     //connect(addressWidget, SIGNAL(selectionChanged(QItemSelection)), this, SLOT(updateActions(QItemSelection)));
 
     viewMenu = menuBar()->addMenu(tr("&View"));
 
-    logWinAct = new QAction(tr("&Log Window"), this);
-    logWinAct->setCheckable(true);
-    logWinAct->setShortcut(Qt::CTRL + Qt::Key_L);
-    viewMenu->addAction(logWinAct);
-    connect(logWinAct, SIGNAL(triggered()), this, SLOT(slotLogWinShow()));
+
+
 
 
     setupMenu = menuBar()->addMenu(tr("&Setup"));
@@ -945,15 +1044,19 @@ void MainWindow::createMenusCommon(){
 
 void MainWindow::createMenusCQWW(){
 
+    logWinAct = new QAction(tr("&Log Window"), this);
+    logWinAct->setCheckable(true);
+    logWinAct->setShortcut(Qt::CTRL + Qt::Key_L);
+    viewMenu->addAction(logWinAct);
+    connect(logWinAct, SIGNAL(triggered()), this, SLOT(slotLogWinShow()));
+
     scoreWinAct = new QAction(tr("&Points Window"), this);
     scoreWinAct->setCheckable(true);
     scoreWinAct->setShortcut(Qt::CTRL + Qt::Key_P);
     viewMenu->addAction(scoreWinAct);
     connect(scoreWinAct, SIGNAL(triggered()), this, SLOT(slotScoreWinShow()));
 
-    ADIFExport = new QAction(tr("&Export to ADIF..."), this);
-    toolMenu->addAction(ADIFExport);
-    connect(ADIFExport, SIGNAL(triggered()), this, SLOT(slotADIFExport()));
+
 
     CabrilloExport = new QAction(tr("&Export to Cabrillo..."), this);
     toolMenu->addAction(CabrilloExport);
@@ -1033,7 +1136,7 @@ void MainWindow::saveFile()
      qDebug() << "MainWindow::saveFile"  << endl;
 
      QString fileName = QFileDialog::getOpenFileName(this,
-         tr("Save file"), kontestDir, tr( "ADIF files (*.adi);;Cabrillo files (*.log)"));
+         tr("Save file"), kontestDir, tr( "ADIF files (*.adi) ;; Cabrillo files (*.log)"));
 
 
 
@@ -1153,7 +1256,8 @@ int MainWindow::checkIfWorkedB4(const QString _qrz)
     //qDebug() << "MainWindow::checkIfWorkedB4: " << _qrz << endl;
     QSqlQuery query;
     QString queryString;
-    queryString = "SELECT id FROM log WHERE call=='" + _qrz +"'";
+    queryString = QString("SELECT *id FROM log WHERE call=='%1' AND lognumber='%2'").arg(_qrz).arg(currentLog);
+    //queryString = "SELECT id FROM log WHERE call=='" + _qrz +"'";
     //qDebug() << "World::checkIfWorkedB4: " << queryString << endl;
     query.exec(queryString);
     query.next();
@@ -1190,6 +1294,7 @@ void MainWindow::readConfigData(){
     configured = true;
 
     initialContestModeConfiguration();
+
 }
 
 bool MainWindow::processConfigLine(const QString _line){
@@ -1269,7 +1374,9 @@ void MainWindow::createData()
 
 void MainWindow::createUIDX()
 {
+    //qDebug() << "MainWindow::createUIDX" << endl;
 
+    QStringList continents;
     QSqlQuery query("SELECT name FROM band");
     while (query.next()) {
         bands << query.value(0).toString();
@@ -1279,9 +1386,24 @@ void MainWindow::createUIDX()
         modes << query1.value(0).toString();
     }
 
+    QSqlQuery query2("SELECT shortname FROM continent");
+    while (query2.next()) {
+        continents << query2.value(0).toString();
+    }
+
+    iotaContinentComboBox->addItems(continents);
+    iotaNumberLineEdit = new QLineEdit;
+    iotaNumberLineEdit->setInputMask("000");
+    iotaNumberLineEdit->setText("000");
+
+    //bands << "10M" << "15M" << "20M" << "40M" << "80M" << "160M";
+    //modes << "SSB" << "CW" << "RTTY";
     bandComboBox->addItems(bands);
     modeComboBox->addItems(modes);
 
+    nameLineEdit->setToolTip(tr("Name of the DX"));
+    qthLineEdit->setToolTip(tr("QTH of the DX"));
+    locatorLineEdit->setToolTip(tr("Locator of the DX"));
     qrzLineEdit->setToolTip(tr("QRZ of the QSO"));
     rstTXLineEdit->setToolTip(tr("TX RST"));
     rstRXLineEdit->setToolTip(tr("RX RST"));
@@ -1300,8 +1422,92 @@ void MainWindow::createUIDX()
     updateStatusBar(tr("Ready"));
     updateQSOStatusBar(tr("Ready"));
 
-    gridGroupBox = new QGroupBox(tr("Input"));
     QGridLayout *layout = new QGridLayout;
+
+    dxUpLeftInputFrame = new QFrame;
+    dxUpLeftInputFrame->setFrameShadow(QFrame::Raised);
+    dxUpLeftInputFrame->setFrameStyle(QFrame::StyledPanel);
+
+    dxUpRightOutputFrame = new QFrame;
+    dxUpRightOutputFrame->setFrameShadow(QFrame::Raised);
+    dxUpRightOutputFrame->setFrameStyle(QFrame::StyledPanel);
+
+
+    dxUpLeftTab = new QTabWidget;
+    dxUpRightTab = new QTabWidget;
+    dxBottonTab = new QTabWidget; //rename to botton
+
+    dxUpLeftTab->setTabPosition(QTabWidget::South);
+    dxUpRightTab->setTabPosition(QTabWidget::South);
+
+/*
+ QWidget *window = new QWidget;
+     QPushButton *button1 = new QPushButton("One");
+     QLineEdit *lineEdit1 = new QLineEdit();
+     QPushButton *button2 = new QPushButton("Two");
+     QLineEdit *lineEdit2 = new QLineEdit();
+     QPushButton *button3 = new QPushButton("Three");
+     QLineEdit *lineEdit3 = new QLineEdit();
+
+     QFormLayout *layout = new QFormLayout;
+     layout->addRow(button1, lineEdit1);
+     layout->addRow(button2, lineEdit2);
+     layout->addRow(button3, lineEdit3);
+
+*/
+
+
+    QWidget *qsoInputTabWidget = new QWidget;
+    QFormLayout *qsoInputTabWidgetLayout = new QFormLayout;
+    QLabel *nameLabel = new QLabel(qsoInputTabWidget);
+    nameLabel->setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
+    nameLabel->setText("Name:");
+    nameLabel->setAlignment(Qt::AlignBottom | Qt::AlignRight);
+    QLabel *qthLabel = new QLabel(qsoInputTabWidget);
+    qthLabel->setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
+    qthLabel->setText("QTH:");
+    qthLabel->setAlignment(Qt::AlignBottom | Qt::AlignRight);
+    QLabel *locLabel = new QLabel(qsoInputTabWidget);
+    locLabel->setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
+    locLabel->setText("Locator:");
+    locLabel->setAlignment(Qt::AlignBottom | Qt::AlignRight);
+
+    qsoInputTabWidgetLayout->addRow(nameLabel, nameLineEdit);
+    qsoInputTabWidgetLayout->addRow(qthLabel, qthLineEdit);
+    qsoInputTabWidgetLayout->addRow(locLabel, locatorLineEdit);
+    qsoInputTabWidget->setLayout(qsoInputTabWidgetLayout);
+
+    QWidget *qslInputTabWidget = new QWidget;
+    QWidget *commentsInputTabWidget = new QWidget;
+    QWidget *othersInputTabWidget = new QWidget;
+
+    int i = dxUpLeftTab->addTab(qsoInputTabWidget, tr("QSO"));
+    i = dxUpLeftTab->addTab(qslInputTabWidget, tr("QSL"));
+
+    QGridLayout *commentsInputTabWidgetLayout = new QGridLayout;
+    commentsInputTabWidgetLayout->addWidget(commentTextEdit, 0, 0);
+    commentsInputTabWidget->setLayout(commentsInputTabWidgetLayout);
+    i = dxUpLeftTab->addTab(commentsInputTabWidget, tr("Comments"));
+
+
+    entityAwardLabel->setFrameShadow(QFrame::Raised);
+    entityAwardLabel->setFrameStyle(QFrame::StyledPanel);
+    iotaAwardLabel->setFrameShadow(QFrame::Raised);
+    iotaAwardLabel->setFrameStyle(QFrame::StyledPanel);
+
+    QHBoxLayout *othersIotaInputLayout = new QHBoxLayout;
+    othersIotaInputLayout->addWidget(iotaContinentComboBox);
+    othersIotaInputLayout->addWidget(iotaNumberLineEdit);
+
+    QFormLayout *othersInputTabWidgetLayout = new QFormLayout;
+    othersInputTabWidgetLayout->addRow(iotaAwardLabel, othersIotaInputLayout);
+    //othersInputTabWidgetLayout->addWidget(iotaContinentComboBox, 0, 1);
+    //othersInputTabWidgetLayout->addWidget(iotaNumberLineEdit, 0, 2);
+    othersInputTabWidgetLayout->addRow(entityAwardLabel, entityAwardComboBox);
+    //othersInputTabWidgetLayout->addWidget(entityAwardComboBox, 1, 1);
+
+    othersInputTabWidget->setLayout(othersInputTabWidgetLayout);
+    i = dxUpLeftTab->addTab(othersInputTabWidget, tr("Others"));
 
 
 
@@ -1336,8 +1542,6 @@ void MainWindow::createUIDX()
     RSTtxvbox->addStretch(1);
     RSTtxgroupBox->setLayout(RSTtxvbox);
 
-
-    //QGroupBox *qrzgroupBox = new QGroupBox(tr("QRZ"));
     qrzgroupBox = new QGroupBox(tr("QRZ"));
     qrzgroupBox->setFlat(true);
     QVBoxLayout *qrzvbox = new QVBoxLayout;
@@ -1370,15 +1574,201 @@ void MainWindow::createUIDX()
     dateEdit->setDisplayFormat("yyyy/MM/dd");
     timeEdit->setDisplayFormat("HH:mm:ss");
 
-    layout->addWidget(qrzgroupBox, 1, 0);
-    //layout->addLayout(RSTLayout, 1, 1);
-    layout->addLayout(TimeLayout, 2, 0);
-    layout->addLayout(BandModeLayout, 1, 1);
-    layout->addLayout(buttonsLayout,2, 1);
-    //layout->addLayout(statusBarLayout, 4, 0, 2 , -1);
 
-    gridGroupBox->setLayout(layout);
-    gridGroupBox->resize(gridGroupBox->minimumSize());
+    QGridLayout *dxUpLeftInputFrameLayout = new QGridLayout;
+    dxUpLeftInputFrameLayout->addWidget(qrzgroupBox, 1, 0);
+    dxUpLeftInputFrameLayout->addLayout(TimeLayout, 2, 0);
+    dxUpLeftInputFrameLayout->addLayout(BandModeLayout, 1, 1);
+    dxUpLeftInputFrameLayout->addLayout(buttonsLayout,2, 1);
+    dxUpLeftInputFrame->setLayout(dxUpLeftInputFrameLayout);
+
+    QVBoxLayout *dxUpLeftLayout = new QVBoxLayout;
+    dxUpLeftLayout->addWidget(dxUpLeftInputFrame);
+    dxUpLeftLayout->addWidget(dxUpLeftTab);
+
+    infoLabel1->setFrameShadow(QFrame::Raised);
+    infoLabel1->setFrameStyle(QFrame::StyledPanel);
+    infoLabel2->setFrameShadow(QFrame::Raised);
+    infoLabel2->setFrameStyle(QFrame::StyledPanel);
+    QVBoxLayout *dxUpRightFixLayout = new QVBoxLayout;
+    dxUpRightFixLayout->addWidget(infoLabel1);
+    dxUpRightFixLayout->addWidget(infoLabel2);
+
+    bandLabel1->setFrameShadow(QFrame::Raised);
+    bandLabel1->setFrameStyle(QFrame::StyledPanel);
+    bandLabel2->setFrameShadow(QFrame::Raised);
+    bandLabel2->setFrameStyle(QFrame::StyledPanel);
+    bandLabel3->setFrameShadow(QFrame::Raised);
+    bandLabel3->setFrameStyle(QFrame::StyledPanel);
+    bandLabel4->setFrameShadow(QFrame::Raised);
+    bandLabel4->setFrameStyle(QFrame::StyledPanel);
+    bandLabel5->setFrameShadow(QFrame::Raised);
+    bandLabel5->setFrameStyle(QFrame::StyledPanel);
+    bandLabel6->setFrameShadow(QFrame::Raised);
+    bandLabel6->setFrameStyle(QFrame::StyledPanel);
+    bandLabel7->setFrameShadow(QFrame::Raised);
+    bandLabel7->setFrameStyle(QFrame::StyledPanel);
+    bandLabel8->setFrameShadow(QFrame::Raised);
+    bandLabel8->setFrameStyle(QFrame::StyledPanel);
+    bandLabel9->setFrameShadow(QFrame::Raised);
+    bandLabel9->setFrameStyle(QFrame::StyledPanel);
+    bandLabel10->setFrameShadow(QFrame::Raised);
+    bandLabel10->setFrameStyle(QFrame::StyledPanel);
+    bandLabel11->setFrameShadow(QFrame::Raised);
+    bandLabel11->setFrameStyle(QFrame::StyledPanel);
+    bandLabel12->setFrameShadow(QFrame::Raised);
+    bandLabel12->setFrameStyle(QFrame::StyledPanel);
+    QLabel *continentLabelN = new QLabel(tr("Continent"));
+    continentLabelN->setFrameShadow(QFrame::Raised);
+    continentLabelN->setFrameStyle(QFrame::StyledPanel);
+    continentLabel->setFrameShadow(QFrame::Raised);
+    continentLabel->setFrameStyle(QFrame::StyledPanel);
+    QLabel *prefixLabelN = new QLabel(tr("Prefix"));
+    prefixLabelN->setFrameShadow(QFrame::Raised);
+    prefixLabelN->setFrameStyle(QFrame::StyledPanel);
+    prefixLabel->setFrameShadow(QFrame::Raised);
+    prefixLabel->setFrameStyle(QFrame::StyledPanel);
+    QLabel *cqzLabelN = new QLabel(tr("CQ"));
+    cqzLabelN->setFrameShadow(QFrame::Raised);
+    cqzLabelN->setFrameStyle(QFrame::StyledPanel);
+    cqzLabel->setFrameShadow(QFrame::Raised);
+    cqzLabel->setFrameStyle(QFrame::StyledPanel);
+    QLabel *ituzLabelN = new QLabel(tr("ITU"));
+    ituzLabelN->setFrameShadow(QFrame::Raised);
+    ituzLabelN->setFrameStyle(QFrame::StyledPanel);
+    ituzLabel->setFrameShadow(QFrame::Raised);
+    ituzLabel->setFrameStyle(QFrame::StyledPanel);
+    QLabel *shortLabelN = new QLabel(tr("Short Path"));
+    shortLabelN->setFrameShadow(QFrame::Raised);
+    shortLabelN->setFrameStyle(QFrame::StyledPanel);
+    QLabel *longLabelN = new QLabel(tr("Long Path"));
+    longLabelN->setFrameShadow(QFrame::Raised);
+    longLabelN->setFrameStyle(QFrame::StyledPanel);
+    QLabel *gradShortLabelN = new QLabel(tr("Grad"));
+    gradShortLabelN->setFrameShadow(QFrame::Raised);
+    gradShortLabelN->setFrameStyle(QFrame::StyledPanel);
+    gradShortLabel->setFrameShadow(QFrame::Raised);
+    gradShortLabel->setFrameStyle(QFrame::StyledPanel);
+    QLabel *distShortLabelN = new QLabel(tr("Km"));
+    distShortLabelN->setFrameShadow(QFrame::Raised);
+    distShortLabelN->setFrameStyle(QFrame::StyledPanel);
+    distShortLabel->setFrameShadow(QFrame::Raised);
+    distShortLabel->setFrameStyle(QFrame::StyledPanel);
+    QLabel *gradLongLabelN = new QLabel(tr("Grad"));
+    gradLongLabelN->setFrameShadow(QFrame::Raised);
+    gradLongLabelN->setFrameStyle(QFrame::StyledPanel);
+    gradLongLabel->setFrameShadow(QFrame::Raised);
+    gradLongLabel->setFrameStyle(QFrame::StyledPanel);
+    QLabel *distLongLabelN = new QLabel(tr("Km"));
+    distLongLabelN->setFrameShadow(QFrame::Raised);
+    distLongLabelN->setFrameStyle(QFrame::StyledPanel);
+    distLongLabel->setFrameShadow(QFrame::Raised);
+    distLongLabel->setFrameStyle(QFrame::StyledPanel);
+
+    QGridLayout *dxUpRightInfoTabmini1Layout = new QGridLayout;
+    dxUpRightInfoTabmini1Layout->addWidget(continentLabelN, 0, 0);
+    dxUpRightInfoTabmini1Layout->addWidget(continentLabel, 1, 0);
+    dxUpRightInfoTabmini1Layout->addWidget(prefixLabelN, 0, 1);
+    dxUpRightInfoTabmini1Layout->addWidget(prefixLabel, 1, 1);
+    dxUpRightInfoTabmini1Layout->addWidget(cqzLabelN, 0, 2);
+    dxUpRightInfoTabmini1Layout->addWidget(cqzLabel, 1, 2);
+    dxUpRightInfoTabmini1Layout->addWidget(ituzLabelN, 0, 3);
+    dxUpRightInfoTabmini1Layout->addWidget(ituzLabel, 1, 3);
+
+    QGridLayout *dxUpRightInfoTabmini2Layout = new QGridLayout;
+    dxUpRightInfoTabmini2Layout->addWidget(shortLabelN, 0, 0, 1, 0);
+    dxUpRightInfoTabmini2Layout->addWidget(gradShortLabelN, 1, 0);
+    dxUpRightInfoTabmini2Layout->addWidget(gradShortLabel, 1, 1);
+    dxUpRightInfoTabmini2Layout->addWidget(distShortLabelN, 1, 2);
+    dxUpRightInfoTabmini2Layout->addWidget(distShortLabel, 1, 3);
+
+    QGridLayout *dxUpRightInfoTabmini3Layout = new QGridLayout;
+    dxUpRightInfoTabmini3Layout->addWidget(longLabelN, 0, 0, 1, 0);
+    dxUpRightInfoTabmini3Layout->addWidget(gradLongLabelN, 1, 0);
+    dxUpRightInfoTabmini3Layout->addWidget(gradLongLabel, 1, 1);
+    dxUpRightInfoTabmini3Layout->addWidget(distLongLabelN, 1, 2);
+    dxUpRightInfoTabmini3Layout->addWidget(distLongLabel, 1, 3);
+
+    QHBoxLayout *dxUpRightInfoTabmini4Layout = new QHBoxLayout;
+    dxUpRightInfoTabmini4Layout->addLayout(dxUpRightInfoTabmini2Layout);
+    dxUpRightInfoTabmini4Layout->addLayout(dxUpRightInfoTabmini3Layout);
+
+    QWidget *infoTabWidget = new QWidget;
+
+    QGridLayout *dxUpRightInfoBandsTabLayout = new QGridLayout;
+    dxUpRightInfoBandsTabLayout->addWidget(bandLabel1, 0, 0);
+    dxUpRightInfoBandsTabLayout->addWidget(bandLabel2, 0, 1);
+    dxUpRightInfoBandsTabLayout->addWidget(bandLabel3, 0, 2);
+    dxUpRightInfoBandsTabLayout->addWidget(bandLabel4, 0, 3);
+    dxUpRightInfoBandsTabLayout->addWidget(bandLabel5, 0, 4);
+    dxUpRightInfoBandsTabLayout->addWidget(bandLabel6, 0, 5);
+    dxUpRightInfoBandsTabLayout->addWidget(bandLabel7, 1, 0);
+    dxUpRightInfoBandsTabLayout->addWidget(bandLabel8, 1, 1);
+    dxUpRightInfoBandsTabLayout->addWidget(bandLabel9, 1, 2);
+    dxUpRightInfoBandsTabLayout->addWidget(bandLabel10, 1, 3);
+    dxUpRightInfoBandsTabLayout->addWidget(bandLabel11, 1, 4);
+    dxUpRightInfoBandsTabLayout->addWidget(bandLabel12, 1, 5);
+
+    QVBoxLayout *dxUpRightInfoTabLayout = new QVBoxLayout;
+    dxUpRightInfoTabLayout->addLayout(dxUpRightInfoBandsTabLayout);
+    dxUpRightInfoTabLayout->addLayout(dxUpRightInfoTabmini1Layout);
+    dxUpRightInfoTabLayout->addLayout(dxUpRightInfoTabmini4Layout);
+
+
+
+
+    infoTabWidget->setLayout(dxUpRightInfoTabLayout);
+/*
+addLayout ( QLayout * layout, int row, int column,
+int rowSpan, int columnSpan, Qt::Alignment alignment = 0 )
+*/
+
+    QWidget *searchTabWidget = new QWidget;
+    i = dxUpRightTab->addTab(infoTabWidget, tr("Info"));
+
+    QWidget *awardsTabWidget = new QWidget;
+
+    QLabel *dxccLabelN = new QLabel(tr("DXCC"));
+    dxccLabelN->setFrameShadow(QFrame::Raised);
+    dxccLabelN->setFrameStyle(QFrame::StyledPanel);
+    dxccLabel->setFrameShadow(QFrame::Raised);
+    dxccLabel->setFrameStyle(QFrame::StyledPanel);
+
+    QLabel *wazLabelN = new QLabel(tr("WAZ"));
+    wazLabelN->setFrameShadow(QFrame::Raised);
+    wazLabelN->setFrameStyle(QFrame::StyledPanel);
+    wazLabel->setFrameShadow(QFrame::Raised);
+    wazLabel->setFrameStyle(QFrame::StyledPanel);
+    QGridLayout *dxUpRightAwardsTabLayout = new QGridLayout;
+    dxUpRightAwardsTabLayout->addWidget(dxccLabelN, 0, 0);
+    dxUpRightAwardsTabLayout->addWidget(dxccLabel, 0, 1);
+    dxUpRightAwardsTabLayout->addWidget(wazLabelN, 1, 0);
+    dxUpRightAwardsTabLayout->addWidget(wazLabel, 1, 1);
+    awardsTabWidget->setLayout(dxUpRightAwardsTabLayout);
+
+    i = dxUpRightTab->addTab(awardsTabWidget, tr("Awards"));
+
+    i = dxUpRightTab->addTab(searchTabWidget, tr("Search"));
+
+    QWidget *logTabWidget = new QWidget;
+    QHBoxLayout *logTabWidgetLayout = new QHBoxLayout;
+
+    logTabWidgetLayout->addWidget(logView);//
+    logTabWidget->setLayout(logTabWidgetLayout);
+
+    QWidget *dxClusterTabWidget = new QWidget;
+    i = dxBottonTab->addTab(logTabWidget, tr("Log"));
+    i = dxBottonTab->addTab(dxClusterTabWidget, tr("DX-Cluster"));
+
+
+    QVBoxLayout *dxUpRightLayout = new QVBoxLayout;
+    dxUpRightLayout->addLayout(dxUpRightFixLayout);
+    dxUpRightLayout->addWidget(dxUpRightTab);
+
+    layout->addLayout(dxUpLeftLayout, 0, 0);
+    layout->addLayout(dxUpRightLayout, 0, 1);
+    layout->addWidget(dxBottonTab, 1, 0, 1, 2);
+
     mainWidget->setLayout(layout);
 
  }
@@ -1402,7 +1792,7 @@ void MainWindow::slotCabrilloExport()
 
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
                                kontestDir,
-                               tr("ADIF (*.adi)"));
+                               tr("Cabrillo (*.log)"));
 
 
     contest->saveFileToSend(fileName);
