@@ -32,7 +32,17 @@ ContestCQWWDXSSB::ContestCQWWDXSSB(){
     myCQz = "";
     myContinent = "";
     NA = -1;
-
+    mycategory = "";
+    arrlSection = "";
+    stationQrz = "";
+    claimedScore = "";
+    name = "";
+    address = "";
+    operators = "";
+    soapbox = "";
+    thiscontest = "";
+    club = "";
+    createdby = "";
 
 }
 
@@ -44,7 +54,58 @@ ContestCQWWDXSSB::ContestCQWWDXSSB(const QStringList _qs)
     myEntity = _qs.at(0);
     myCQz = _qs.at(1);
     myContinent = _qs.at(2);
-    NA = _qs.at(3);
+    NA = _qs.at(3); // NA is North America for scoring purposes
+    thiscontest = "CQ-WW-SSB";
+    mycategory = "SINGLE-OP ALL HIGH";
+    club = "NoClub";
+    createdby ="Kontest-Alpha";
+
+    /* OFFICIAL CATEGORIES
+    CATEGORY: SINGLE-OP ALL HIGH
+    CATEGORY: SINGLE-OP 160M HIGH
+    CATEGORY: SINGLE-OP 80M HIGH
+    CATEGORY: SINGLE-OP 40M HIGH
+    CATEGORY: SINGLE-OP 20M HIGH
+    CATEGORY: SINGLE-OP 15M HIGH
+    CATEGORY: SINGLE-OP 10M HIGH
+    CATEGORY: SINGLE-OP ALL LOW
+    CATEGORY: SINGLE-OP 160M LOW
+    CATEGORY: SINGLE-OP 80M LOW
+    CATEGORY: SINGLE-OP 40M LOW
+    CATEGORY: SINGLE-OP 20M LOW
+    CATEGORY: SINGLE-OP 15M LOW
+    CATEGORY: SINGLE-OP 10M LOW
+    CATEGORY: SINGLE-OP ALL QRP
+    CATEGORY: SINGLE-OP 160M QRP
+    CATEGORY: SINGLE-OP 80M QRP
+    CATEGORY: SINGLE-OP 40M QRP
+    CATEGORY: SINGLE-OP 20M QRP
+    CATEGORY: SINGLE-OP 15M QRP
+    CATEGORY: SINGLE-OP 10M QRP
+    CATEGORY: SINGLE-OP-ASSISTED ALL
+    CATEGORY: SINGLE-OP-ASSISTED 160M
+    CATEGORY: SINGLE-OP-ASSISTED 80M
+    CATEGORY: SINGLE-OP-ASSISTED 40M
+    CATEGORY: SINGLE-OP-ASSISTED 20M
+    CATEGORY: SINGLE-OP-ASSISTED 15M
+    CATEGORY: SINGLE-OP-ASSISTED 10M
+    CATEGORY: MULTI-ONE
+    CATEGORY: MULTI-TWO
+    CATEGORY: MULTI-MULTI
+    CATEGORY: CHECKLOG
+    */
+    arrlSection = "DX";
+    stationQrz = "";
+    claimedScore = "000";
+    name = "No-Name";
+    address = "MyPoBox\nADDRESS: SecondLineOfAddress";
+    operators = "EA4TV, EA4GCA";
+    soapbox = "MySoapbox\nSOAPBOX: Another line\nSOAPBOX: and even one more";
+
+
+
+
+
     qDebug() << "ContestCQWWDXSSB::ContestCQWWDXSSB: " << myEntity << "/" << myCQz << "/" << myContinent << "/" << NA << endl;
 }
 
@@ -111,8 +172,8 @@ for (int i = 0; i<_qs.length(); i++){
     return false;
 }
 
-int ContestCQWWDXSSB::getPoints(const QStringList _qs){
-qDebug() << "ContestCQWWDXSSB::getPoints"  << endl;
+int ContestCQWWDXSSB::getQSOPoints(const QStringList _qs){
+qDebug() << "ContestCQWWDXSSB::getQSOPoints"  << endl;
 // Receives:  QStringList _qs;
 //_qs << DX-Entity << DX-Continent
 
@@ -176,8 +237,30 @@ bool ContestCQWWDXSSB::saveFileToSend(const QString& _fileName)
 
     QTextStream out(&file);
 
+//_qs << myEntity << myCQz << myContinent << NA-id;
+//myARRLSect << StationQRZ << myCategory << myClub <<
+//myAddress << operators(comma separated EA4TV, EA4GCA, ...)
+//SoapBox
+
 
     out << "START-OF-LOG: 3" << endl;
+    out << "ARRL-SECTION: " << arrlSection << endl;
+    out << "CALLSIGN: " << stationQrz << endl;
+    out << "CATEGORY: " + mycategory << endl;
+
+    out << "CLAIMED-SCORE: " << claimedScore << endl;
+    out << "CLUB: " << club  << endl;
+    out << "CONTEST: " << thiscontest << endl;
+    out << "NAME: " << name << endl;
+    out << "ADDRESS: " << address  << endl;
+    out << "CREATED-BY: " <<  createdby  << endl;
+    out << "OPERATORS: " << operators  << endl;// [required for multi-op stations]
+    out << "SOAPBOX: " << soapbox << endl; //[add lines if needed]
+
+
+
+
+
 
     QSqlQuery query("SELECT * FROM log");
 
@@ -187,6 +270,8 @@ bool ContestCQWWDXSSB::saveFileToSend(const QString& _fileName)
     /*
 START-OF-LOG: 3.0
 CONTEST: CQ-WW-RTTY
+CONTEST: CQ-WW-SSB
+CONTEST: CQ-WW-CW
 CALLSIGN: LU6ETB
 CATEGORY-OPERATOR: SINGLE-OP
 CATEGORY-BAND: 10M
@@ -201,19 +286,7 @@ ADDRESS-CITY: Aptos
 ADDRESS-STATE: CA
 ADDRESS-POSTALCODE: 95003
 ADDRESS-COUNTRY: USA
-QSO: 28087 RY 2001-09-29 0000 LU6ETB        599 13 DX  NN7NN         599 03 NV
-QSO: 28087 RY 2001-09-29 0000 LU6ETB        599 13 DX  N7TR          599 03 NV
-QSO: 28087 RY 2001-09-29 0000 LU6ETB        599 13 DX  W6WVK         599 03 CA
-QSO: 28087 RY 2001-09-29 0000 LU6ETB        599 13 DX  K3EST         599 03 CA
-QSO: 28087 RY 2001-09-29 0000 LU6ETB        599 13 DX  KF4NRH        599 05 FL
-QSO: 28087 RY 2001-09-29 0001 LU6ETB        599 13 DX  N6BLS         599 03 CA
-QSO: 28087 RY 2001-09-29 0001 LU6ETB        599 13 DX  K4SN          599 05 FL
-QSO: 28087 RY 2001-09-29 0001 LU6ETB        599 13 DX  JR1PIK        599 25 DX
-QSO: 28087 RY 2001-09-29 0002 LU6ETB        599 13 DX  K7SS/KH6      599 31 DX
-QSO: 28087 RY 2001-09-29 0003 LU6ETB        599 13 DX  HS0ZCR        599 26 DX
-QSO: 28087 RY 2001-09-29 0003 LU6ETB        599 13 DX  WA5VGI        599 03 CA
-QSO: 28087 RY 2001-09-29 0004 LU6ETB        599 13 DX  W6GNX         599 03 CA
-QSO: 28087 RY 2001-09-29 0004 LU6ETB        599 13 DX  KN6YD         599 03 CA
+QSO:  3799 PH 2000-11-26 0711 N6TW          59  03     K9QZO         59  04     0
 END-OF-LOG:
 
     */
@@ -224,7 +297,28 @@ END-OF-LOG:
         nameCol = rec.indexOf("freq");
         aux1 = (query.value(nameCol)).toString();
 
-        out << aux1 << " ";
+        if (aux1.length()<1)
+        {
+            nameCol = rec.indexOf("bandid");
+            aux1 = (query.value(nameCol)).toString();
+            queryString = QString("SELECT cabrillo FROM band WHERE id='%1'").arg(aux1);
+            query1.exec(queryString);
+            query1.next();
+
+            aux1 = query1.value(0).toString();
+            qDebug() << "ContestCQWWDXSSB::saveFileToSend: band: "  << queryString << "/" << aux1 << endl;
+
+            if (!(aux1.length()>1))
+            {
+                aux1 = " NULL";
+            }
+
+
+
+        }
+        aux1.remove(QChar('.'), Qt::CaseInsensitive);
+
+        out << aux1.rightJustified(5, ' ', true) << " ";
 
 
         nameCol = rec.indexOf("modeid");
@@ -249,16 +343,110 @@ END-OF-LOG:
         }
 
         nameCol = rec.indexOf("qso_date");
+
         aux1 = (query.value(nameCol)).toString();
-        qDebug() << "Contest::saveFileToSend: Date: "  << aux1 << endl;
+        qDebug() << "ContestCQWWDXSSB::saveFileToSend date: " << aux1 << endl;
+        aux1.replace(QString("/"), QString("-"));
+
         if ((aux1.length()) == 10){
 
             out << aux1 << " ";
         }
 
+        nameCol = rec.indexOf("time_on");
+        aux1 = (query.value(nameCol)).toString();
+        qDebug() << "ContestCQWWDXSSB::saveFileToSend time1: " << aux1 << endl;
+        aux1.remove(QChar(':'), Qt::CaseInsensitive);
+        aux1.truncate(4);
+        aux1.leftJustified(4, '0', true);
+        out << aux1 << " ";
 
+
+        qDebug() << "ContestCQWWDXSSB::saveFileToSend time2: " << aux1 << endl;
+
+        nameCol = rec.indexOf("station_callsign");
+        aux1 = (query.value(nameCol)).toString();
+        if (aux1.length()<3)
+        {
+            nameCol = rec.indexOf("operator");
+            aux1 = (query.value(nameCol)).toString();
+        }
+
+        out << aux1.leftJustified(13, ' ', true) << " ";
+
+        nameCol = rec.indexOf("rst_sent");
+        aux1 = (query.value(nameCol)).toString();
+        aux1.truncate(3);
+        out << aux1.leftJustified(3, ' ', true) << " ";
+
+        qDebug() << "ContestCQWWDXSSB::saveFileToSend: rsttx" << aux1 << endl;
+
+        nameCol = rec.indexOf("stx");
+        aux1 = (query.value(nameCol)).toString();
+        aux1.truncate(6);
+        out << aux1.leftJustified(6, ' ', true) << " ";
+
+        nameCol = rec.indexOf("call");
+        aux1 = (query.value(nameCol)).toString();
+        aux1.truncate(13);
+        out << aux1.leftJustified(13, ' ') << " ";
+
+        nameCol = rec.indexOf("rst_rcvd");
+        aux1 = (query.value(nameCol)).toString();
+
+        out << aux1.leftJustified(3, ' ', true) << " ";
+
+        nameCol = rec.indexOf("srx");
+        aux1 = (query.value(nameCol)).toString();
+        aux1.truncate(6);
+        out << aux1.leftJustified(6, ' ', true) << " ";
+
+        nameCol = rec.indexOf("transmiterid");
+        aux1 = (query.value(nameCol)).toString();
+        aux1.truncate(1);
+        out << aux1 ;
+
+       // out << "0"; // This is the RIG used to log the QSO. 1 is used as
+
+        out << endl;
 
     }
 
         out << "END-OF-LOG:" << endl;
+}
+
+int ContestCQWWDXSSB::getTotalScore()
+{
+
+    return (getMultipliers()) * (getPoints());
+
+}
+int ContestCQWWDXSSB::getMultipliers()
+{
+    int multipliers = 0;
+    QSqlQuery query("SELECT * FROM log");
+    QSqlRecord rec = query.record();
+    int nameCol = rec.indexOf("multiplier");
+
+    while (query.next()) {
+
+        multipliers += (query.value(nameCol)).toInt();
+    }
+
+    return multipliers;
+}
+
+int ContestCQWWDXSSB::getPoints()
+{
+    int points = 0;
+    QSqlQuery query("SELECT * FROM log");
+    QSqlRecord rec = query.record();
+    int nameCol = rec.indexOf("points");
+
+    while (query.next()) {
+
+        points += (query.value(nameCol)).toInt();
+    }
+
+    return points;
 }

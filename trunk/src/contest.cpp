@@ -21,9 +21,23 @@ bool Contest::isMultiplier(const QStringList _qs)
     return false;
 }
 
-int Contest::getPoints(const QStringList _qs)
+int Contest::getQSOPoints(const QStringList _qs)
 {
-    qDebug() << "Contest::getPoints"  << endl;
+    qDebug() << "Contest::getQSOPoints"  << endl;
+    return 0;
+}
+
+int Contest::getTotalScore()
+{
+    return 0;
+}
+
+int Contest::getMultipliers()
+{
+    return 0;
+}
+int Contest::getPoints()
+{
     return 0;
 }
 

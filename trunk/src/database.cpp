@@ -43,6 +43,7 @@ bool DataBase::createDataBase()
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 "lower VARCHAR(7) NOT NULL, "
                 "upper VARCHAR(7) NOT NULL, "
+                "cabrillo VARCHAR(6) NOT NULL, "
                 "name VARCHAR(40) NOT NULL)");
 
 
@@ -59,6 +60,7 @@ bool DataBase::createDataBase()
                "qso_date_off VARCHAR(10), "
                 "time_off VARCHAR(8), "
                 "time_on VARCHAR(8) NOT NULL, "
+                 "lognumber INTEGER NOT NULL, "
                "srx VARCHAR(10), "
                "stx VARCHAR(10), "
                "points INTEGER,"
@@ -158,6 +160,7 @@ bool DataBase::createDataBase()
                "ten_ten INTEGER, "
                "tx_pwr INTEGER, "
                "web VARCHAR, "
+               "transmiterid VARCHAR, "
                "FOREIGN KEY (qso_complete) REFERENCES qso_complete_enumeration, "
                "FOREIGN KEY (qsl_rcvd_via) REFERENCES qsl_via_enumeration, "
                "FOREIGN KEY (qsl_sent_via) REFERENCES qsl_via_enumeration, "
@@ -277,34 +280,35 @@ query.exec("INSERT INTO qsl_rec_status (shortname, name) VALUES ('V', 'Validated
       query.exec("INSERT INTO continent (shortname, name) VALUES ('OC', 'Oceania')");
 
       //To add a band, just create another line:
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('1mm', '241000', '250000')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('2mm', '142000', '149000')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('2.5mm', '119980', '120020')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('4mm', '75500', '81000')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('6mm', '47000', '47200')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('1.25CM', '24000', '24250')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('3CM', '10000', '10500')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('6CM', '5650', '5925')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('9CM', '3300', '3500')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('23CM', '1240', '1300')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('33CM', '902', '928')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('70CM', '420', '450')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('1.25M', '222', '225')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('2M', '144', '148')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('4M', '70', '71')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('6M', '50', '54')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('10M', '28.0', '29.7')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('12M', '24.89', '24.99')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('15M', '21.0', '21.45')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('17M', '18.068', '18.168')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('20M', '14.0', '14.35')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('30M', '10.0', '10.15')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('40M', '7.0', '7.3')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('60M', '5.102', '5.404')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('80M', '3.5', '4.0')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('160M', '1.8', '2.0')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('560M', '0.501', '0.504')");
-      query.exec("INSERT INTO band (name, lower, upper) VALUES ('2190M', '0.136', '0.137')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('0', '0', '0', 'Light')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('1mm', '241000', '250000', '241G')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('2mm', '142000', '149000', '142G')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('2.5mm', '119980', '120020', '119G')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('4mm', '75500', '81000', '75G')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('6mm', '47000', '47200', '47G')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('1.25CM', '24000', '24250', '24G')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('3CM', '10000', '10500', '10G')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('6CM', '5650', '5925', '5.7G')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('9CM', '3300', '3500', '3.4G')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('13CM', '1240', '1300', '1.2G')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('33CM', '902', '928', '902')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('70CM', '420', '450', '432')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('1.25M', '222', '225', '222')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('2M', '144', '148', '144')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('4M', '70', '71', '4M')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('6M', '50', '54', '50')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('10M', '28.0', '29.7', '28000')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('12M', '24.89', '24.99', '24000')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('15M', '21.0', '21.45', '21000')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('17M', '18.068', '18.168', '18100')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('20M', '14.0', '14.35', '14000')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('30M', '10.0', '10.15', '10000')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('40M', '7.0', '7.3', '7000')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('60M', '5.102', '5.404', '5100)");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('80M', '3.5', '4.0', '3500')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('160M', '1.8', '2.0', '1800')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('560M', '0.501', '0.504', '560M')");
+      query.exec("INSERT INTO band (name, lower, upper, cabrillo) VALUES ('2190M', '0.136', '0.137', '2190M')");
 
 
 //To add a mode, just create another line:
